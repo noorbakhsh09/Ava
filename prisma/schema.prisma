@@ -1,0 +1,150 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum JobSource {
+  DESKTOP
+  TELEGRAM
+}
+
+enum ChatRole {
+  USER
+  ASSISTANT
+}
+
+enum ApprovalAction {
+  MEMORY_UPSERT
+  MEMORY_DELETE
+  CREATE_JOB
+}
+
+enum ApprovalStatus {
+  PENDING
+  PROCESSING
+  APPROVED
+  DENIED
+  FAILED
+}
+
+enum ResultDeliveryStatus {
+  PENDING
+  SENDING
+  SENT
+  DECLINED
+}
+
+model AgentJob {
+  id             String       @id @default(cuid())
+  status         JobStatus    @default(QUEUED)
+  source         JobSource
+  prompt         String       @db.Text
+  workspacePath  String
+  telegramChatId String?
+  codexThreadId  String?
+  result         String?      @db.Text
+  error          String?      @db.Text
+  startedAt      DateTime?
+  finishedAt     DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  conversationId String?
+  approvalRequestId String? @unique
+  resultDeliveryStatus ResultDeliveryStatus?
+  events         AgentEvent[]
+  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  approvalRequest ApprovalRequest? @relation(fields: [approvalRequestId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([conversationId, createdAt])
+}
+
+model AgentEvent {
+  id        String   @id @default(cuid())
+  jobId     String
+  kind      String
+  payload   Json
+  createdAt DateTime @default(now())
+  job       AgentJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId, createdAt])
+}
+
+model Memory {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([updatedAt])
+}
+
+model ChatMessage {
+  id             String   @id @default(cuid())
+  telegramUserId String
+  telegramChatId String
+  role           ChatRole
+  content        String   @db.Text
+  createdAt      DateTime @default(now())
+
+  @@index([telegramUserId, createdAt])
+  @@index([telegramChatId, createdAt])
+}
+
+model ApprovalRequest {
+  id                         String         @id @default(cuid())
+  action                     ApprovalAction
+  status                     ApprovalStatus @default(PENDING)
+  requesterTelegramUserId    String
+  requesterTelegramChatId    String
+  requesterDisplayName       String
+  payload                    Json
+  reviewedByTelegramUserId   String?
+  error                      String?        @db.Text
+  createdAt                  DateTime       @default(now())
+  reviewedAt                 DateTime?
+  updatedAt                  DateTime       @updatedAt
+  job                        AgentJob?
+
+  @@index([status, createdAt])
+  @@index([requesterTelegramUserId, createdAt])
+}
+
+model Conversation {
+  id                       String                          @id @default(cuid())
+  title                    String
+  workspacePath            String
+  codexThreadId            String?                         @unique
+  createdByTelegramUserId  String
+  createdAt                DateTime                        @default(now())
+  updatedAt                DateTime                        @updatedAt
+  lastUsedAt               DateTime                        @default(now())
+  jobs                     AgentJob[]
+  selections               TelegramConversationSelection[]
+
+  @@index([lastUsedAt])
+}
+
+model TelegramConversationSelection {
+  telegramChatId  String       @id
+  telegramUserId  String
+  conversationId  String
+  updatedAt       DateTime     @updatedAt
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+}

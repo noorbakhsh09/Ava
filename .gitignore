@@ -1,0 +1,14 @@
+node_modules/
+out/
+dist/
+release/
+.env
+.env.*
+!.env.example
+*.local
+*.pem
+*.key
+*.log
+.DS_Store
+coverage/
+prisma/dev.db
