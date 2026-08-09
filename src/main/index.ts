@@ -30,6 +30,21 @@ function registerIpc(runtimeManager: RuntimeManager) {
     runtimeManager.saveSettings(update),
   );
   ipcMain.handle("ava:jobs", () => runtimeManager.listJobs());
+  ipcMain.handle("ava:chat-history", (_event, limit?: number) =>
+    runtimeManager.desktopChatHistory(limit),
+  );
+  ipcMain.handle("ava:chat-send", (_event, message: string) =>
+    runtimeManager.sendDesktopChat(message),
+  );
+  ipcMain.handle(
+    "ava:activity",
+    (_event, input: { page?: number; pageSize?: number }) =>
+      runtimeManager.listActivity(input),
+  );
+  ipcMain.handle("ava:memories", () => runtimeManager.listMemories());
+  ipcMain.handle("ava:memory-delete", (_event, id: string) =>
+    runtimeManager.deleteMemory(id),
+  );
   ipcMain.handle(
     "ava:run-prompt",
     (_event, input: { prompt: string; workspacePath?: string }) =>

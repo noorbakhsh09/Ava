@@ -25,21 +25,27 @@ export type AggregateTelegramConversationSelection = {
 }
 
 export type TelegramConversationSelectionMinAggregateOutputType = {
+  scopeKey: string | null
   telegramChatId: string | null
+  telegramMessageThreadId: string | null
   telegramUserId: string | null
   conversationId: string | null
   updatedAt: Date | null
 }
 
 export type TelegramConversationSelectionMaxAggregateOutputType = {
+  scopeKey: string | null
   telegramChatId: string | null
+  telegramMessageThreadId: string | null
   telegramUserId: string | null
   conversationId: string | null
   updatedAt: Date | null
 }
 
 export type TelegramConversationSelectionCountAggregateOutputType = {
+  scopeKey: number
   telegramChatId: number
+  telegramMessageThreadId: number
   telegramUserId: number
   conversationId: number
   updatedAt: number
@@ -48,21 +54,27 @@ export type TelegramConversationSelectionCountAggregateOutputType = {
 
 
 export type TelegramConversationSelectionMinAggregateInputType = {
+  scopeKey?: true
   telegramChatId?: true
+  telegramMessageThreadId?: true
   telegramUserId?: true
   conversationId?: true
   updatedAt?: true
 }
 
 export type TelegramConversationSelectionMaxAggregateInputType = {
+  scopeKey?: true
   telegramChatId?: true
+  telegramMessageThreadId?: true
   telegramUserId?: true
   conversationId?: true
   updatedAt?: true
 }
 
 export type TelegramConversationSelectionCountAggregateInputType = {
+  scopeKey?: true
   telegramChatId?: true
+  telegramMessageThreadId?: true
   telegramUserId?: true
   conversationId?: true
   updatedAt?: true
@@ -142,7 +154,9 @@ export type TelegramConversationSelectionGroupByArgs<ExtArgs extends runtime.Typ
 }
 
 export type TelegramConversationSelectionGroupByOutputType = {
+  scopeKey: string
   telegramChatId: string
+  telegramMessageThreadId: string | null
   telegramUserId: string
   conversationId: string
   updatedAt: Date
@@ -170,7 +184,9 @@ export type TelegramConversationSelectionWhereInput = {
   AND?: Prisma.TelegramConversationSelectionWhereInput | Prisma.TelegramConversationSelectionWhereInput[]
   OR?: Prisma.TelegramConversationSelectionWhereInput[]
   NOT?: Prisma.TelegramConversationSelectionWhereInput | Prisma.TelegramConversationSelectionWhereInput[]
+  scopeKey?: Prisma.StringFilter<"TelegramConversationSelection"> | string
   telegramChatId?: Prisma.StringFilter<"TelegramConversationSelection"> | string
+  telegramMessageThreadId?: Prisma.StringNullableFilter<"TelegramConversationSelection"> | string | null
   telegramUserId?: Prisma.StringFilter<"TelegramConversationSelection"> | string
   conversationId?: Prisma.StringFilter<"TelegramConversationSelection"> | string
   updatedAt?: Prisma.DateTimeFilter<"TelegramConversationSelection"> | Date | string
@@ -178,7 +194,9 @@ export type TelegramConversationSelectionWhereInput = {
 }
 
 export type TelegramConversationSelectionOrderByWithRelationInput = {
+  scopeKey?: Prisma.SortOrder
   telegramChatId?: Prisma.SortOrder
+  telegramMessageThreadId?: Prisma.SortOrderInput | Prisma.SortOrder
   telegramUserId?: Prisma.SortOrder
   conversationId?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -186,18 +204,22 @@ export type TelegramConversationSelectionOrderByWithRelationInput = {
 }
 
 export type TelegramConversationSelectionWhereUniqueInput = Prisma.AtLeast<{
-  telegramChatId?: string
+  scopeKey?: string
   AND?: Prisma.TelegramConversationSelectionWhereInput | Prisma.TelegramConversationSelectionWhereInput[]
   OR?: Prisma.TelegramConversationSelectionWhereInput[]
   NOT?: Prisma.TelegramConversationSelectionWhereInput | Prisma.TelegramConversationSelectionWhereInput[]
+  telegramChatId?: Prisma.StringFilter<"TelegramConversationSelection"> | string
+  telegramMessageThreadId?: Prisma.StringNullableFilter<"TelegramConversationSelection"> | string | null
   telegramUserId?: Prisma.StringFilter<"TelegramConversationSelection"> | string
   conversationId?: Prisma.StringFilter<"TelegramConversationSelection"> | string
   updatedAt?: Prisma.DateTimeFilter<"TelegramConversationSelection"> | Date | string
   conversation?: Prisma.XOR<Prisma.ConversationScalarRelationFilter, Prisma.ConversationWhereInput>
-}, "telegramChatId">
+}, "scopeKey">
 
 export type TelegramConversationSelectionOrderByWithAggregationInput = {
+  scopeKey?: Prisma.SortOrder
   telegramChatId?: Prisma.SortOrder
+  telegramMessageThreadId?: Prisma.SortOrderInput | Prisma.SortOrder
   telegramUserId?: Prisma.SortOrder
   conversationId?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -210,55 +232,71 @@ export type TelegramConversationSelectionScalarWhereWithAggregatesInput = {
   AND?: Prisma.TelegramConversationSelectionScalarWhereWithAggregatesInput | Prisma.TelegramConversationSelectionScalarWhereWithAggregatesInput[]
   OR?: Prisma.TelegramConversationSelectionScalarWhereWithAggregatesInput[]
   NOT?: Prisma.TelegramConversationSelectionScalarWhereWithAggregatesInput | Prisma.TelegramConversationSelectionScalarWhereWithAggregatesInput[]
+  scopeKey?: Prisma.StringWithAggregatesFilter<"TelegramConversationSelection"> | string
   telegramChatId?: Prisma.StringWithAggregatesFilter<"TelegramConversationSelection"> | string
+  telegramMessageThreadId?: Prisma.StringNullableWithAggregatesFilter<"TelegramConversationSelection"> | string | null
   telegramUserId?: Prisma.StringWithAggregatesFilter<"TelegramConversationSelection"> | string
   conversationId?: Prisma.StringWithAggregatesFilter<"TelegramConversationSelection"> | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"TelegramConversationSelection"> | Date | string
 }
 
 export type TelegramConversationSelectionCreateInput = {
+  scopeKey: string
   telegramChatId: string
+  telegramMessageThreadId?: string | null
   telegramUserId: string
   updatedAt?: Date | string
   conversation: Prisma.ConversationCreateNestedOneWithoutSelectionsInput
 }
 
 export type TelegramConversationSelectionUncheckedCreateInput = {
+  scopeKey: string
   telegramChatId: string
+  telegramMessageThreadId?: string | null
   telegramUserId: string
   conversationId: string
   updatedAt?: Date | string
 }
 
 export type TelegramConversationSelectionUpdateInput = {
+  scopeKey?: Prisma.StringFieldUpdateOperationsInput | string
   telegramChatId?: Prisma.StringFieldUpdateOperationsInput | string
+  telegramMessageThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   telegramUserId?: Prisma.StringFieldUpdateOperationsInput | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   conversation?: Prisma.ConversationUpdateOneRequiredWithoutSelectionsNestedInput
 }
 
 export type TelegramConversationSelectionUncheckedUpdateInput = {
+  scopeKey?: Prisma.StringFieldUpdateOperationsInput | string
   telegramChatId?: Prisma.StringFieldUpdateOperationsInput | string
+  telegramMessageThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   telegramUserId?: Prisma.StringFieldUpdateOperationsInput | string
   conversationId?: Prisma.StringFieldUpdateOperationsInput | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type TelegramConversationSelectionCreateManyInput = {
+  scopeKey: string
   telegramChatId: string
+  telegramMessageThreadId?: string | null
   telegramUserId: string
   conversationId: string
   updatedAt?: Date | string
 }
 
 export type TelegramConversationSelectionUpdateManyMutationInput = {
+  scopeKey?: Prisma.StringFieldUpdateOperationsInput | string
   telegramChatId?: Prisma.StringFieldUpdateOperationsInput | string
+  telegramMessageThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   telegramUserId?: Prisma.StringFieldUpdateOperationsInput | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type TelegramConversationSelectionUncheckedUpdateManyInput = {
+  scopeKey?: Prisma.StringFieldUpdateOperationsInput | string
   telegramChatId?: Prisma.StringFieldUpdateOperationsInput | string
+  telegramMessageThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   telegramUserId?: Prisma.StringFieldUpdateOperationsInput | string
   conversationId?: Prisma.StringFieldUpdateOperationsInput | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -275,21 +313,27 @@ export type TelegramConversationSelectionOrderByRelationAggregateInput = {
 }
 
 export type TelegramConversationSelectionCountOrderByAggregateInput = {
+  scopeKey?: Prisma.SortOrder
   telegramChatId?: Prisma.SortOrder
+  telegramMessageThreadId?: Prisma.SortOrder
   telegramUserId?: Prisma.SortOrder
   conversationId?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
 export type TelegramConversationSelectionMaxOrderByAggregateInput = {
+  scopeKey?: Prisma.SortOrder
   telegramChatId?: Prisma.SortOrder
+  telegramMessageThreadId?: Prisma.SortOrder
   telegramUserId?: Prisma.SortOrder
   conversationId?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
 export type TelegramConversationSelectionMinOrderByAggregateInput = {
+  scopeKey?: Prisma.SortOrder
   telegramChatId?: Prisma.SortOrder
+  telegramMessageThreadId?: Prisma.SortOrder
   telegramUserId?: Prisma.SortOrder
   conversationId?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -338,13 +382,17 @@ export type TelegramConversationSelectionUncheckedUpdateManyWithoutConversationN
 }
 
 export type TelegramConversationSelectionCreateWithoutConversationInput = {
+  scopeKey: string
   telegramChatId: string
+  telegramMessageThreadId?: string | null
   telegramUserId: string
   updatedAt?: Date | string
 }
 
 export type TelegramConversationSelectionUncheckedCreateWithoutConversationInput = {
+  scopeKey: string
   telegramChatId: string
+  telegramMessageThreadId?: string | null
   telegramUserId: string
   updatedAt?: Date | string
 }
@@ -379,32 +427,42 @@ export type TelegramConversationSelectionScalarWhereInput = {
   AND?: Prisma.TelegramConversationSelectionScalarWhereInput | Prisma.TelegramConversationSelectionScalarWhereInput[]
   OR?: Prisma.TelegramConversationSelectionScalarWhereInput[]
   NOT?: Prisma.TelegramConversationSelectionScalarWhereInput | Prisma.TelegramConversationSelectionScalarWhereInput[]
+  scopeKey?: Prisma.StringFilter<"TelegramConversationSelection"> | string
   telegramChatId?: Prisma.StringFilter<"TelegramConversationSelection"> | string
+  telegramMessageThreadId?: Prisma.StringNullableFilter<"TelegramConversationSelection"> | string | null
   telegramUserId?: Prisma.StringFilter<"TelegramConversationSelection"> | string
   conversationId?: Prisma.StringFilter<"TelegramConversationSelection"> | string
   updatedAt?: Prisma.DateTimeFilter<"TelegramConversationSelection"> | Date | string
 }
 
 export type TelegramConversationSelectionCreateManyConversationInput = {
+  scopeKey: string
   telegramChatId: string
+  telegramMessageThreadId?: string | null
   telegramUserId: string
   updatedAt?: Date | string
 }
 
 export type TelegramConversationSelectionUpdateWithoutConversationInput = {
+  scopeKey?: Prisma.StringFieldUpdateOperationsInput | string
   telegramChatId?: Prisma.StringFieldUpdateOperationsInput | string
+  telegramMessageThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   telegramUserId?: Prisma.StringFieldUpdateOperationsInput | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type TelegramConversationSelectionUncheckedUpdateWithoutConversationInput = {
+  scopeKey?: Prisma.StringFieldUpdateOperationsInput | string
   telegramChatId?: Prisma.StringFieldUpdateOperationsInput | string
+  telegramMessageThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   telegramUserId?: Prisma.StringFieldUpdateOperationsInput | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type TelegramConversationSelectionUncheckedUpdateManyWithoutConversationInput = {
+  scopeKey?: Prisma.StringFieldUpdateOperationsInput | string
   telegramChatId?: Prisma.StringFieldUpdateOperationsInput | string
+  telegramMessageThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   telegramUserId?: Prisma.StringFieldUpdateOperationsInput | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -412,7 +470,9 @@ export type TelegramConversationSelectionUncheckedUpdateManyWithoutConversationI
 
 
 export type TelegramConversationSelectionSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
+  scopeKey?: boolean
   telegramChatId?: boolean
+  telegramMessageThreadId?: boolean
   telegramUserId?: boolean
   conversationId?: boolean
   updatedAt?: boolean
@@ -420,7 +480,9 @@ export type TelegramConversationSelectionSelect<ExtArgs extends runtime.Types.Ex
 }, ExtArgs["result"]["telegramConversationSelection"]>
 
 export type TelegramConversationSelectionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
+  scopeKey?: boolean
   telegramChatId?: boolean
+  telegramMessageThreadId?: boolean
   telegramUserId?: boolean
   conversationId?: boolean
   updatedAt?: boolean
@@ -428,7 +490,9 @@ export type TelegramConversationSelectionSelectCreateManyAndReturn<ExtArgs exten
 }, ExtArgs["result"]["telegramConversationSelection"]>
 
 export type TelegramConversationSelectionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
+  scopeKey?: boolean
   telegramChatId?: boolean
+  telegramMessageThreadId?: boolean
   telegramUserId?: boolean
   conversationId?: boolean
   updatedAt?: boolean
@@ -436,13 +500,15 @@ export type TelegramConversationSelectionSelectUpdateManyAndReturn<ExtArgs exten
 }, ExtArgs["result"]["telegramConversationSelection"]>
 
 export type TelegramConversationSelectionSelectScalar = {
+  scopeKey?: boolean
   telegramChatId?: boolean
+  telegramMessageThreadId?: boolean
   telegramUserId?: boolean
   conversationId?: boolean
   updatedAt?: boolean
 }
 
-export type TelegramConversationSelectionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"telegramChatId" | "telegramUserId" | "conversationId" | "updatedAt", ExtArgs["result"]["telegramConversationSelection"]>
+export type TelegramConversationSelectionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"scopeKey" | "telegramChatId" | "telegramMessageThreadId" | "telegramUserId" | "conversationId" | "updatedAt", ExtArgs["result"]["telegramConversationSelection"]>
 export type TelegramConversationSelectionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   conversation?: boolean | Prisma.ConversationDefaultArgs<ExtArgs>
 }
@@ -459,7 +525,9 @@ export type $TelegramConversationSelectionPayload<ExtArgs extends runtime.Types.
     conversation: Prisma.$ConversationPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
+    scopeKey: string
     telegramChatId: string
+    telegramMessageThreadId: string | null
     telegramUserId: string
     conversationId: string
     updatedAt: Date
@@ -546,8 +614,8 @@ export interface TelegramConversationSelectionDelegate<ExtArgs extends runtime.T
    * // Get first 10 TelegramConversationSelections
    * const telegramConversationSelections = await prisma.telegramConversationSelection.findMany({ take: 10 })
    * 
-   * // Only select the `telegramChatId`
-   * const telegramConversationSelectionWithTelegramChatIdOnly = await prisma.telegramConversationSelection.findMany({ select: { telegramChatId: true } })
+   * // Only select the `scopeKey`
+   * const telegramConversationSelectionWithScopeKeyOnly = await prisma.telegramConversationSelection.findMany({ select: { scopeKey: true } })
    * 
    */
   findMany<T extends TelegramConversationSelectionFindManyArgs>(args?: Prisma.SelectSubset<T, TelegramConversationSelectionFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TelegramConversationSelectionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
@@ -591,9 +659,9 @@ export interface TelegramConversationSelectionDelegate<ExtArgs extends runtime.T
    *   ]
    * })
    * 
-   * // Create many TelegramConversationSelections and only return the `telegramChatId`
-   * const telegramConversationSelectionWithTelegramChatIdOnly = await prisma.telegramConversationSelection.createManyAndReturn({
-   *   select: { telegramChatId: true },
+   * // Create many TelegramConversationSelections and only return the `scopeKey`
+   * const telegramConversationSelectionWithScopeKeyOnly = await prisma.telegramConversationSelection.createManyAndReturn({
+   *   select: { scopeKey: true },
    *   data: [
    *     // ... provide data here
    *   ]
@@ -682,9 +750,9 @@ export interface TelegramConversationSelectionDelegate<ExtArgs extends runtime.T
    *   ]
    * })
    * 
-   * // Update zero or more TelegramConversationSelections and only return the `telegramChatId`
-   * const telegramConversationSelectionWithTelegramChatIdOnly = await prisma.telegramConversationSelection.updateManyAndReturn({
-   *   select: { telegramChatId: true },
+   * // Update zero or more TelegramConversationSelections and only return the `scopeKey`
+   * const telegramConversationSelectionWithScopeKeyOnly = await prisma.telegramConversationSelection.updateManyAndReturn({
+   *   select: { scopeKey: true },
    *   where: {
    *     // ... provide filter here
    *   },
@@ -887,7 +955,9 @@ export interface Prisma__TelegramConversationSelectionClient<T, Null = never, Ex
  * Fields of the TelegramConversationSelection model
  */
 export interface TelegramConversationSelectionFieldRefs {
+  readonly scopeKey: Prisma.FieldRef<"TelegramConversationSelection", 'String'>
   readonly telegramChatId: Prisma.FieldRef<"TelegramConversationSelection", 'String'>
+  readonly telegramMessageThreadId: Prisma.FieldRef<"TelegramConversationSelection", 'String'>
   readonly telegramUserId: Prisma.FieldRef<"TelegramConversationSelection", 'String'>
   readonly conversationId: Prisma.FieldRef<"TelegramConversationSelection", 'String'>
   readonly updatedAt: Prisma.FieldRef<"TelegramConversationSelection", 'DateTime'>

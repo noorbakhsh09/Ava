@@ -56,4 +56,46 @@ describe("persistent coding conversations", () => {
     expect(listing.selectedId).toBe("conversation_123");
     expect(listing.conversations).toHaveLength(1);
   });
+
+  test("keeps forum-topic selections independent", async () => {
+    const selections = new Map<string, string>();
+    const conversations = new Map([
+      ["conversation_17", {
+        id: "conversation_17",
+        title: "Topic 17",
+        workspacePath: "/tmp/project",
+      }],
+      ["conversation_18", {
+        id: "conversation_18",
+        title: "Topic 18",
+        workspacePath: "/tmp/project",
+      }],
+    ]);
+    const db = {
+      conversation: {
+        findUnique: async ({ where }: { where: { id: string } }) =>
+          conversations.get(where.id) ?? null,
+        findMany: async () => [...conversations.values()],
+      },
+      telegramConversationSelection: {
+        upsert: async ({ where, create }: {
+          where: { scopeKey: string };
+          create: { conversationId: string };
+        }) => {
+          selections.set(where.scopeKey, create.conversationId);
+        },
+        findUnique: async ({ where }: { where: { scopeKey: string } }) => {
+          const conversationId = selections.get(where.scopeKey);
+          return conversationId ? { conversationId } : null;
+        },
+      },
+    };
+    const service = new ConversationService(db as never, config);
+
+    await service.select("-100123", "42", "conversation_17", "17");
+    await service.select("-100123", "42", "conversation_18", "18");
+
+    expect((await service.list("-100123", "17")).selectedId).toBe("conversation_17");
+    expect((await service.list("-100123", "18")).selectedId).toBe("conversation_18");
+  });
 });

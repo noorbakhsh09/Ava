@@ -1,6 +1,6 @@
 {
   "name": "ava-agent",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "Desktop control plane for a Telegram and Codex coding agent",
   "license": "MIT",
@@ -33,6 +33,7 @@
     "dotenv": "^17.4.2",
     "elysia": "^1.4.29",
     "grammy": "^1.45.1",
+    "lucide-react": "^1.30.0",
     "pg": "^8.22.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

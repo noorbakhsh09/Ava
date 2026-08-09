@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { ChatService } from "../src/main/services/chat";
+import { JobSource } from "../src/generated/prisma/client";
 
 const config = {
   postgresUrl: "",
@@ -25,6 +26,8 @@ function harness(decision: unknown) {
     approvals: [] as unknown[],
     memoryReads: [] as unknown[],
     schemas: [] as unknown[],
+    prompts: [] as string[],
+    responsePolicies: [] as unknown[],
   };
   const db = {
     memory: {
@@ -43,6 +46,7 @@ function harness(decision: unknown) {
   const decisions = Array.isArray(decision) ? [...decision] : [decision];
   const codex = {
     runStructured: async (_prompt: string, _workspace: string, schema: unknown) => {
+      calls.prompts.push(_prompt);
       calls.schemas.push(schema);
       return decisions.shift() ?? { reply: "", toolCalls: [] };
     },
@@ -62,6 +66,13 @@ function harness(decision: unknown) {
   const conversations = {
     getOrCreateSelected: async () => ({ id: "conversation_123", title: "Login project" }),
   };
+  const responsePolicies = {
+    restrictToOwner: async (input: unknown) => calls.responsePolicies.push({ restrict: input }),
+    restrictToMentions: async (input: unknown) =>
+      calls.responsePolicies.push({ mentions: input }),
+    allowEveryone: async (chatId: string, threadId?: string) =>
+      calls.responsePolicies.push({ everyone: { chatId, threadId } }),
+  };
   const service = new ChatService(
     db as never,
     config,
@@ -69,6 +80,7 @@ function harness(decision: unknown) {
     orchestrator as never,
     approvals as never,
     conversations as never,
+    responsePolicies as never,
   );
   return { calls, service };
 }
@@ -199,5 +211,161 @@ describe("conversational tool routing", () => {
 
     expect(calls.approvals).toHaveLength(0);
     expect(reply).toContain("No request was stored");
+  });
+
+  test("updates an existing shared memory", async () => {
+    const { calls, service } = harness({
+      reply: "",
+      toolCalls: [{
+        name: "memory_update",
+        key: "response_language",
+        value: "Reply in English",
+        prompt: "",
+      }],
+    });
+
+    const reply = await service.respond({
+      telegramUserId: "42",
+      telegramChatId: "99",
+      displayName: "Javad",
+      message: "I changed my mind; reply in English from now on",
+    });
+
+    expect(calls.memories).toHaveLength(1);
+    expect(JSON.stringify(calls.memories[0])).toContain("Reply in English");
+    expect(reply).toContain("saved or updated");
+  });
+
+  test("stores an owner-only response policy for the current topic", async () => {
+    const { calls, service } = harness({
+      reply: "",
+      toolCalls: [{ name: "response_policy_set", key: "", value: "owner_only", prompt: "" }],
+    });
+
+    const reply = await service.respond({
+      telegramUserId: "42",
+      telegramChatId: "-100123",
+      telegramMessageThreadId: "17",
+      chatType: "supergroup",
+      displayName: "Javad",
+      message: "Only answer me in this topic",
+    });
+
+    expect(JSON.stringify(calls.responsePolicies[0])).toContain('"telegramMessageThreadId":"17"');
+    expect(reply).toContain("every message from you");
+  });
+
+  test("removes a topic response restriction when the admin changes their mind", async () => {
+    const { calls, service } = harness({
+      reply: "",
+      toolCalls: [{ name: "response_policy_set", key: "", value: "everyone", prompt: "" }],
+    });
+
+    const reply = await service.respond({
+      telegramUserId: "42",
+      telegramChatId: "-100123",
+      telegramMessageThreadId: "17",
+      chatType: "supergroup",
+      displayName: "Javad",
+      message: "Answer everyone again",
+    });
+
+    expect(JSON.stringify(calls.responsePolicies[0])).toContain('"threadId":"17"');
+    expect(reply).toContain("every message from everyone");
+  });
+
+  test("stores a mentions-only response memory for the current topic", async () => {
+    const { calls, service } = harness({
+      reply: "",
+      toolCalls: [{ name: "response_policy_set", key: "", value: "mentions_only", prompt: "" }],
+    });
+
+    const reply = await service.respond({
+      telegramUserId: "42",
+      telegramChatId: "-100123",
+      telegramMessageThreadId: "17",
+      chatType: "supergroup",
+      displayName: "Javad",
+      message: "Only answer mentions from now on",
+    });
+
+    expect(JSON.stringify(calls.responsePolicies[0])).toContain('"telegramMessageThreadId":"17"');
+    expect(reply).toContain("only to mentions");
+  });
+
+  test("includes the replied message in model context", async () => {
+    const { calls, service } = harness({ reply: "Here is the answer.", toolCalls: [] });
+    await service.respond({
+      telegramUserId: "42",
+      telegramChatId: "-100123",
+      telegramMessageThreadId: "17",
+      chatType: "supergroup",
+      displayName: "Javad",
+      message: "@ava answer this",
+      repliedMessage: { author: "Sara", text: "What does this error mean?" },
+    });
+
+    expect(calls.prompts[0]).toContain("What does this error mean?");
+    expect(calls.prompts[0]).toContain("Sara");
+  });
+
+  test("lets the AI localize confirmed system messages from memory", async () => {
+    const { calls, service } = harness([
+      {
+        reply: "",
+        toolCalls: [{ name: "memory_update", key: "language", value: "فارسی", prompt: "" }],
+      },
+      { reply: "حافظه با موفقیت به‌روزرسانی شد." },
+    ]);
+
+    const reply = await service.respond({
+      telegramUserId: "42",
+      telegramChatId: "99",
+      displayName: "Javad",
+      message: "از این به بعد فارسی صحبت کن",
+    });
+
+    expect(reply).toBe("حافظه با موفقیت به‌روزرسانی شد.");
+    expect(calls.prompts[1]).toContain("confirmed Ava system event");
+  });
+
+  test("treats the Electron chat as trusted without Telegram approval", async () => {
+    const { calls, service } = harness({
+      reply: "",
+      toolCalls: [{ name: "memory_upsert", key: "desktop_preference", value: "Concise", prompt: "" }],
+    });
+
+    await service.respond({
+      telegramUserId: "electron:admin",
+      telegramChatId: "electron:admin",
+      displayName: "Desktop administrator",
+      message: "Remember to be concise",
+      chatType: "private",
+      trusted: true,
+    });
+
+    expect(calls.memories).toHaveLength(1);
+    expect(calls.approvals).toHaveLength(0);
+    expect(JSON.stringify(calls.schemas[0])).toContain("memory_upsert");
+  });
+
+  test("queues Electron coding work without a Telegram delivery target", async () => {
+    const { calls, service } = harness({
+      reply: "",
+      toolCalls: [{ name: "create_job", key: "", value: "", prompt: "Fix desktop chat" }],
+    });
+
+    await service.respond({
+      telegramUserId: "electron:admin",
+      telegramChatId: "electron:admin",
+      displayName: "Desktop administrator",
+      message: "Fix desktop chat",
+      chatType: "private",
+      trusted: true,
+      source: JobSource.DESKTOP,
+    });
+
+    expect(JSON.stringify(calls.jobs[0])).toContain('"source":"DESKTOP"');
+    expect(JSON.stringify(calls.jobs[0])).not.toContain("telegramChatId");
   });
 });

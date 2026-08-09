@@ -30,6 +30,7 @@ export type ApprovalRequestMinAggregateOutputType = {
   status: $Enums.ApprovalStatus | null
   requesterTelegramUserId: string | null
   requesterTelegramChatId: string | null
+  requesterTelegramMessageThreadId: string | null
   requesterDisplayName: string | null
   reviewedByTelegramUserId: string | null
   error: string | null
@@ -44,6 +45,7 @@ export type ApprovalRequestMaxAggregateOutputType = {
   status: $Enums.ApprovalStatus | null
   requesterTelegramUserId: string | null
   requesterTelegramChatId: string | null
+  requesterTelegramMessageThreadId: string | null
   requesterDisplayName: string | null
   reviewedByTelegramUserId: string | null
   error: string | null
@@ -58,6 +60,7 @@ export type ApprovalRequestCountAggregateOutputType = {
   status: number
   requesterTelegramUserId: number
   requesterTelegramChatId: number
+  requesterTelegramMessageThreadId: number
   requesterDisplayName: number
   payload: number
   reviewedByTelegramUserId: number
@@ -75,6 +78,7 @@ export type ApprovalRequestMinAggregateInputType = {
   status?: true
   requesterTelegramUserId?: true
   requesterTelegramChatId?: true
+  requesterTelegramMessageThreadId?: true
   requesterDisplayName?: true
   reviewedByTelegramUserId?: true
   error?: true
@@ -89,6 +93,7 @@ export type ApprovalRequestMaxAggregateInputType = {
   status?: true
   requesterTelegramUserId?: true
   requesterTelegramChatId?: true
+  requesterTelegramMessageThreadId?: true
   requesterDisplayName?: true
   reviewedByTelegramUserId?: true
   error?: true
@@ -103,6 +108,7 @@ export type ApprovalRequestCountAggregateInputType = {
   status?: true
   requesterTelegramUserId?: true
   requesterTelegramChatId?: true
+  requesterTelegramMessageThreadId?: true
   requesterDisplayName?: true
   payload?: true
   reviewedByTelegramUserId?: true
@@ -191,6 +197,7 @@ export type ApprovalRequestGroupByOutputType = {
   status: $Enums.ApprovalStatus
   requesterTelegramUserId: string
   requesterTelegramChatId: string
+  requesterTelegramMessageThreadId: string | null
   requesterDisplayName: string
   payload: runtime.JsonValue
   reviewedByTelegramUserId: string | null
@@ -227,6 +234,7 @@ export type ApprovalRequestWhereInput = {
   status?: Prisma.EnumApprovalStatusFilter<"ApprovalRequest"> | $Enums.ApprovalStatus
   requesterTelegramUserId?: Prisma.StringFilter<"ApprovalRequest"> | string
   requesterTelegramChatId?: Prisma.StringFilter<"ApprovalRequest"> | string
+  requesterTelegramMessageThreadId?: Prisma.StringNullableFilter<"ApprovalRequest"> | string | null
   requesterDisplayName?: Prisma.StringFilter<"ApprovalRequest"> | string
   payload?: Prisma.JsonFilter<"ApprovalRequest">
   reviewedByTelegramUserId?: Prisma.StringNullableFilter<"ApprovalRequest"> | string | null
@@ -243,6 +251,7 @@ export type ApprovalRequestOrderByWithRelationInput = {
   status?: Prisma.SortOrder
   requesterTelegramUserId?: Prisma.SortOrder
   requesterTelegramChatId?: Prisma.SortOrder
+  requesterTelegramMessageThreadId?: Prisma.SortOrderInput | Prisma.SortOrder
   requesterDisplayName?: Prisma.SortOrder
   payload?: Prisma.SortOrder
   reviewedByTelegramUserId?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -262,6 +271,7 @@ export type ApprovalRequestWhereUniqueInput = Prisma.AtLeast<{
   status?: Prisma.EnumApprovalStatusFilter<"ApprovalRequest"> | $Enums.ApprovalStatus
   requesterTelegramUserId?: Prisma.StringFilter<"ApprovalRequest"> | string
   requesterTelegramChatId?: Prisma.StringFilter<"ApprovalRequest"> | string
+  requesterTelegramMessageThreadId?: Prisma.StringNullableFilter<"ApprovalRequest"> | string | null
   requesterDisplayName?: Prisma.StringFilter<"ApprovalRequest"> | string
   payload?: Prisma.JsonFilter<"ApprovalRequest">
   reviewedByTelegramUserId?: Prisma.StringNullableFilter<"ApprovalRequest"> | string | null
@@ -278,6 +288,7 @@ export type ApprovalRequestOrderByWithAggregationInput = {
   status?: Prisma.SortOrder
   requesterTelegramUserId?: Prisma.SortOrder
   requesterTelegramChatId?: Prisma.SortOrder
+  requesterTelegramMessageThreadId?: Prisma.SortOrderInput | Prisma.SortOrder
   requesterDisplayName?: Prisma.SortOrder
   payload?: Prisma.SortOrder
   reviewedByTelegramUserId?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -299,6 +310,7 @@ export type ApprovalRequestScalarWhereWithAggregatesInput = {
   status?: Prisma.EnumApprovalStatusWithAggregatesFilter<"ApprovalRequest"> | $Enums.ApprovalStatus
   requesterTelegramUserId?: Prisma.StringWithAggregatesFilter<"ApprovalRequest"> | string
   requesterTelegramChatId?: Prisma.StringWithAggregatesFilter<"ApprovalRequest"> | string
+  requesterTelegramMessageThreadId?: Prisma.StringNullableWithAggregatesFilter<"ApprovalRequest"> | string | null
   requesterDisplayName?: Prisma.StringWithAggregatesFilter<"ApprovalRequest"> | string
   payload?: Prisma.JsonWithAggregatesFilter<"ApprovalRequest">
   reviewedByTelegramUserId?: Prisma.StringNullableWithAggregatesFilter<"ApprovalRequest"> | string | null
@@ -314,6 +326,7 @@ export type ApprovalRequestCreateInput = {
   status?: $Enums.ApprovalStatus
   requesterTelegramUserId: string
   requesterTelegramChatId: string
+  requesterTelegramMessageThreadId?: string | null
   requesterDisplayName: string
   payload: Prisma.JsonNullValueInput | runtime.InputJsonValue
   reviewedByTelegramUserId?: string | null
@@ -330,6 +343,7 @@ export type ApprovalRequestUncheckedCreateInput = {
   status?: $Enums.ApprovalStatus
   requesterTelegramUserId: string
   requesterTelegramChatId: string
+  requesterTelegramMessageThreadId?: string | null
   requesterDisplayName: string
   payload: Prisma.JsonNullValueInput | runtime.InputJsonValue
   reviewedByTelegramUserId?: string | null
@@ -346,6 +360,7 @@ export type ApprovalRequestUpdateInput = {
   status?: Prisma.EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus
   requesterTelegramUserId?: Prisma.StringFieldUpdateOperationsInput | string
   requesterTelegramChatId?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterTelegramMessageThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requesterDisplayName?: Prisma.StringFieldUpdateOperationsInput | string
   payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   reviewedByTelegramUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -362,6 +377,7 @@ export type ApprovalRequestUncheckedUpdateInput = {
   status?: Prisma.EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus
   requesterTelegramUserId?: Prisma.StringFieldUpdateOperationsInput | string
   requesterTelegramChatId?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterTelegramMessageThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requesterDisplayName?: Prisma.StringFieldUpdateOperationsInput | string
   payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   reviewedByTelegramUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -378,6 +394,7 @@ export type ApprovalRequestCreateManyInput = {
   status?: $Enums.ApprovalStatus
   requesterTelegramUserId: string
   requesterTelegramChatId: string
+  requesterTelegramMessageThreadId?: string | null
   requesterDisplayName: string
   payload: Prisma.JsonNullValueInput | runtime.InputJsonValue
   reviewedByTelegramUserId?: string | null
@@ -393,6 +410,7 @@ export type ApprovalRequestUpdateManyMutationInput = {
   status?: Prisma.EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus
   requesterTelegramUserId?: Prisma.StringFieldUpdateOperationsInput | string
   requesterTelegramChatId?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterTelegramMessageThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requesterDisplayName?: Prisma.StringFieldUpdateOperationsInput | string
   payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   reviewedByTelegramUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -408,6 +426,7 @@ export type ApprovalRequestUncheckedUpdateManyInput = {
   status?: Prisma.EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus
   requesterTelegramUserId?: Prisma.StringFieldUpdateOperationsInput | string
   requesterTelegramChatId?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterTelegramMessageThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requesterDisplayName?: Prisma.StringFieldUpdateOperationsInput | string
   payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   reviewedByTelegramUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -428,6 +447,7 @@ export type ApprovalRequestCountOrderByAggregateInput = {
   status?: Prisma.SortOrder
   requesterTelegramUserId?: Prisma.SortOrder
   requesterTelegramChatId?: Prisma.SortOrder
+  requesterTelegramMessageThreadId?: Prisma.SortOrder
   requesterDisplayName?: Prisma.SortOrder
   payload?: Prisma.SortOrder
   reviewedByTelegramUserId?: Prisma.SortOrder
@@ -443,6 +463,7 @@ export type ApprovalRequestMaxOrderByAggregateInput = {
   status?: Prisma.SortOrder
   requesterTelegramUserId?: Prisma.SortOrder
   requesterTelegramChatId?: Prisma.SortOrder
+  requesterTelegramMessageThreadId?: Prisma.SortOrder
   requesterDisplayName?: Prisma.SortOrder
   reviewedByTelegramUserId?: Prisma.SortOrder
   error?: Prisma.SortOrder
@@ -457,6 +478,7 @@ export type ApprovalRequestMinOrderByAggregateInput = {
   status?: Prisma.SortOrder
   requesterTelegramUserId?: Prisma.SortOrder
   requesterTelegramChatId?: Prisma.SortOrder
+  requesterTelegramMessageThreadId?: Prisma.SortOrder
   requesterDisplayName?: Prisma.SortOrder
   reviewedByTelegramUserId?: Prisma.SortOrder
   error?: Prisma.SortOrder
@@ -495,6 +517,7 @@ export type ApprovalRequestCreateWithoutJobInput = {
   status?: $Enums.ApprovalStatus
   requesterTelegramUserId: string
   requesterTelegramChatId: string
+  requesterTelegramMessageThreadId?: string | null
   requesterDisplayName: string
   payload: Prisma.JsonNullValueInput | runtime.InputJsonValue
   reviewedByTelegramUserId?: string | null
@@ -510,6 +533,7 @@ export type ApprovalRequestUncheckedCreateWithoutJobInput = {
   status?: $Enums.ApprovalStatus
   requesterTelegramUserId: string
   requesterTelegramChatId: string
+  requesterTelegramMessageThreadId?: string | null
   requesterDisplayName: string
   payload: Prisma.JsonNullValueInput | runtime.InputJsonValue
   reviewedByTelegramUserId?: string | null
@@ -541,6 +565,7 @@ export type ApprovalRequestUpdateWithoutJobInput = {
   status?: Prisma.EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus
   requesterTelegramUserId?: Prisma.StringFieldUpdateOperationsInput | string
   requesterTelegramChatId?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterTelegramMessageThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requesterDisplayName?: Prisma.StringFieldUpdateOperationsInput | string
   payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   reviewedByTelegramUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -556,6 +581,7 @@ export type ApprovalRequestUncheckedUpdateWithoutJobInput = {
   status?: Prisma.EnumApprovalStatusFieldUpdateOperationsInput | $Enums.ApprovalStatus
   requesterTelegramUserId?: Prisma.StringFieldUpdateOperationsInput | string
   requesterTelegramChatId?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterTelegramMessageThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requesterDisplayName?: Prisma.StringFieldUpdateOperationsInput | string
   payload?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   reviewedByTelegramUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -573,6 +599,7 @@ export type ApprovalRequestSelect<ExtArgs extends runtime.Types.Extensions.Inter
   status?: boolean
   requesterTelegramUserId?: boolean
   requesterTelegramChatId?: boolean
+  requesterTelegramMessageThreadId?: boolean
   requesterDisplayName?: boolean
   payload?: boolean
   reviewedByTelegramUserId?: boolean
@@ -589,6 +616,7 @@ export type ApprovalRequestSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   status?: boolean
   requesterTelegramUserId?: boolean
   requesterTelegramChatId?: boolean
+  requesterTelegramMessageThreadId?: boolean
   requesterDisplayName?: boolean
   payload?: boolean
   reviewedByTelegramUserId?: boolean
@@ -604,6 +632,7 @@ export type ApprovalRequestSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   status?: boolean
   requesterTelegramUserId?: boolean
   requesterTelegramChatId?: boolean
+  requesterTelegramMessageThreadId?: boolean
   requesterDisplayName?: boolean
   payload?: boolean
   reviewedByTelegramUserId?: boolean
@@ -619,6 +648,7 @@ export type ApprovalRequestSelectScalar = {
   status?: boolean
   requesterTelegramUserId?: boolean
   requesterTelegramChatId?: boolean
+  requesterTelegramMessageThreadId?: boolean
   requesterDisplayName?: boolean
   payload?: boolean
   reviewedByTelegramUserId?: boolean
@@ -628,7 +658,7 @@ export type ApprovalRequestSelectScalar = {
   updatedAt?: boolean
 }
 
-export type ApprovalRequestOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "action" | "status" | "requesterTelegramUserId" | "requesterTelegramChatId" | "requesterDisplayName" | "payload" | "reviewedByTelegramUserId" | "error" | "createdAt" | "reviewedAt" | "updatedAt", ExtArgs["result"]["approvalRequest"]>
+export type ApprovalRequestOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "action" | "status" | "requesterTelegramUserId" | "requesterTelegramChatId" | "requesterTelegramMessageThreadId" | "requesterDisplayName" | "payload" | "reviewedByTelegramUserId" | "error" | "createdAt" | "reviewedAt" | "updatedAt", ExtArgs["result"]["approvalRequest"]>
 export type ApprovalRequestInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   job?: boolean | Prisma.ApprovalRequest$jobArgs<ExtArgs>
 }
@@ -646,6 +676,7 @@ export type $ApprovalRequestPayload<ExtArgs extends runtime.Types.Extensions.Int
     status: $Enums.ApprovalStatus
     requesterTelegramUserId: string
     requesterTelegramChatId: string
+    requesterTelegramMessageThreadId: string | null
     requesterDisplayName: string
     payload: runtime.JsonValue
     reviewedByTelegramUserId: string | null
@@ -1082,6 +1113,7 @@ export interface ApprovalRequestFieldRefs {
   readonly status: Prisma.FieldRef<"ApprovalRequest", 'ApprovalStatus'>
   readonly requesterTelegramUserId: Prisma.FieldRef<"ApprovalRequest", 'String'>
   readonly requesterTelegramChatId: Prisma.FieldRef<"ApprovalRequest", 'String'>
+  readonly requesterTelegramMessageThreadId: Prisma.FieldRef<"ApprovalRequest", 'String'>
   readonly requesterDisplayName: Prisma.FieldRef<"ApprovalRequest", 'String'>
   readonly payload: Prisma.FieldRef<"ApprovalRequest", 'Json'>
   readonly reviewedByTelegramUserId: Prisma.FieldRef<"ApprovalRequest", 'String'>

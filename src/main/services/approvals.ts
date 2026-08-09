@@ -21,6 +21,7 @@ const createJobPayload = z.object({ prompt: z.string().trim().min(1).max(20_000)
 export type ApprovalRequestInput = {
   requesterTelegramUserId: string;
   requesterTelegramChatId: string;
+  requesterTelegramMessageThreadId?: string;
   requesterDisplayName: string;
 } & (
   | { action: typeof ApprovalAction.MEMORY_UPSERT; payload: z.infer<typeof memoryUpsertPayload> }
@@ -61,6 +62,7 @@ export class ApprovalService {
         action: input.action,
         requesterTelegramUserId: input.requesterTelegramUserId,
         requesterTelegramChatId: input.requesterTelegramChatId,
+        requesterTelegramMessageThreadId: input.requesterTelegramMessageThreadId,
         requesterDisplayName: input.requesterDisplayName.trim().slice(0, 200) || "Telegram user",
         payload: payload as Prisma.InputJsonValue,
       },

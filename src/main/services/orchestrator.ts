@@ -72,6 +72,7 @@ export class AgentOrchestrator {
     source: JobSource;
     workspacePath?: string;
     telegramChatId?: string;
+    telegramMessageThreadId?: string;
     conversationId?: string;
     approvalRequestId?: string;
   }) {
@@ -89,6 +90,7 @@ export class AgentOrchestrator {
         source: input.source,
         workspacePath,
         telegramChatId: input.telegramChatId,
+        telegramMessageThreadId: input.telegramMessageThreadId,
         conversationId: conversation?.id,
         approvalRequestId: input.approvalRequestId,
         resultDeliveryStatus: input.approvalRequestId ? ResultDeliveryStatus.PENDING : undefined,

@@ -12,6 +12,12 @@ import { ChatService } from "./chat";
 import { GitHubClient } from "../clients/github";
 import { ApprovalService } from "./approvals";
 import { ConversationService } from "./conversations";
+import { TelegramResponsePolicyService } from "./telegram-response-policy";
+import { ChatRole } from "../../generated/prisma/client";
+
+const ELECTRON_CHAT_ID = "electron:admin";
+const ELECTRON_USER_ID = "electron:admin";
+const ACTIVITY_PAGE_SIZES = new Set([10, 30, 50, 100]);
 
 export type ConnectionState = "disabled" | "checking" | "connected" | "error";
 
@@ -36,6 +42,7 @@ export class RuntimeManager {
   private settings!: AgentSettings;
   private db?: PrismaClient;
   private orchestrator?: AgentOrchestrator;
+  private chat?: ChatService;
   private telegram?: TelegramService;
   private status: RuntimeStatus = {
     database: disabled("Add a PostgreSQL URL"),
@@ -129,6 +136,7 @@ export class RuntimeManager {
           memory_owner_column: boolean;
           approval_job_column: boolean;
           result_delivery_column: boolean;
+          message_thread_column: boolean;
         }>>(
           `SELECT
             to_regclass('"AgentJob"')::text AS agent_job,
@@ -157,7 +165,14 @@ export class RuntimeManager {
               WHERE table_schema = current_schema()
                 AND table_name = 'AgentJob'
                 AND column_name = 'resultDeliveryStatus'
-            ) AS result_delivery_column`,
+            ) AS result_delivery_column,
+            EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = current_schema()
+                AND table_name = 'ChatMessage'
+                AND column_name = 'telegramMessageThreadId'
+            ) AS message_thread_column`,
         );
         if (
           !tables[0]?.agent_job ||
@@ -168,7 +183,8 @@ export class RuntimeManager {
           !tables[0]?.conversation_selection ||
           tables[0]?.memory_owner_column ||
           !tables[0]?.approval_job_column ||
-          !tables[0]?.result_delivery_column
+          !tables[0]?.result_delivery_column ||
+          !tables[0]?.message_thread_column
         ) {
           throw new Error("Connected, but migrations are pending. Click Apply migrations in Ava.");
         }
@@ -182,10 +198,33 @@ export class RuntimeManager {
 
     if (this.db) {
       const conversations = new ConversationService(this.db, config);
+      const responsePolicies = new TelegramResponsePolicyService(this.db);
       const orchestrator = new AgentOrchestrator(this.db, config, codex, conversations);
       this.orchestrator = orchestrator;
       const approvals = new ApprovalService(this.db, config, orchestrator, conversations);
-      const chat = new ChatService(this.db, config, codex, orchestrator, approvals, conversations);
+      const chat = new ChatService(
+        this.db,
+        config,
+        codex,
+        orchestrator,
+        approvals,
+        conversations,
+        responsePolicies,
+      );
+      this.chat = chat;
+      orchestrator.onFinished(async (job) => {
+        if (job.source !== JobSource.DESKTOP) return;
+        await this.db?.chatMessage.create({
+          data: {
+            telegramUserId: ELECTRON_USER_ID,
+            telegramChatId: ELECTRON_CHAT_ID,
+            role: ChatRole.ASSISTANT,
+            content: job.status === "COMPLETED"
+              ? job.result ?? "The coding job completed without a final message."
+              : `Coding job ${job.status.toLowerCase()}: ${job.error ?? "No details."}`,
+          },
+        });
+      });
       const telegram = new TelegramService(
         config,
         this.db,
@@ -193,6 +232,7 @@ export class RuntimeManager {
         chat,
         approvals,
         conversations,
+        responsePolicies,
       );
       this.telegram = telegram;
       if (telegram.enabled) {
@@ -200,7 +240,13 @@ export class RuntimeManager {
           const bot = await telegram.start();
           this.status.telegram = {
             state: "connected",
-            message: `@${bot?.username ?? "bot"} · ${config.telegramAllowedUserIds.size} trusted administrator(s)`,
+            message: [
+              `@${bot?.username ?? "bot"}`,
+              `${config.telegramAllowedUserIds.size} trusted administrator(s)`,
+              bot?.can_read_all_group_messages
+                ? "all group messages enabled"
+                : "privacy mode enabled — disable it in BotFather or make Ava a group administrator",
+            ].join(" · "),
             checkedAt: checkedAt(),
           };
         } catch (error) {
@@ -233,6 +279,77 @@ export class RuntimeManager {
     return this.orchestrator.enqueueAdHoc({ prompt, workspacePath, source: JobSource.DESKTOP });
   }
 
+  async sendDesktopChat(message: string) {
+    const prompt = message.trim();
+    if (!prompt) throw new Error("Message is required");
+    if (!this.chat) throw new Error("Chat is unavailable until PostgreSQL and Codex are ready");
+    const reply = await this.chat.respond({
+      telegramUserId: ELECTRON_USER_ID,
+      telegramChatId: ELECTRON_CHAT_ID,
+      displayName: "Desktop administrator",
+      message: prompt,
+      chatType: "private",
+      trusted: true,
+      source: JobSource.DESKTOP,
+    });
+    return { reply };
+  }
+
+  async desktopChatHistory(limit = 100) {
+    if (!this.db) return [];
+    const take = Math.min(Math.max(Math.trunc(limit), 1), 200);
+    const messages = await this.db.chatMessage.findMany({
+      where: { telegramChatId: ELECTRON_CHAT_ID },
+      orderBy: { createdAt: "desc" },
+      take,
+    });
+    return messages.reverse().map((message) => this.messageDto(message));
+  }
+
+  async listActivity(input: { page?: number; pageSize?: number }) {
+    if (!this.db) return { rows: [], page: 1, pageSize: 50, total: 0, totalPages: 0 };
+    const requestedPageSize = Math.trunc(input.pageSize ?? 50);
+    const pageSize = ACTIVITY_PAGE_SIZES.has(requestedPageSize) ? requestedPageSize : 50;
+    const page = Math.max(Math.trunc(input.page ?? 1), 1);
+    const total = await this.db.chatMessage.count();
+    const totalPages = Math.ceil(total / pageSize);
+    const safePage = totalPages > 0 ? Math.min(page, totalPages) : 1;
+    const rows = await this.db.chatMessage.findMany({
+      orderBy: { createdAt: "desc" },
+      skip: (safePage - 1) * pageSize,
+      take: pageSize,
+    });
+    return {
+      rows: rows.map((message) => this.messageDto(message)),
+      page: safePage,
+      pageSize,
+      total,
+      totalPages,
+    };
+  }
+
+  async listMemories() {
+    if (!this.db) return [];
+    const memories = await this.db.memory.findMany({
+      orderBy: { updatedAt: "desc" },
+      take: 500,
+    });
+    return memories.map((memory) => ({
+      ...memory,
+      createdAt: memory.createdAt.toISOString(),
+      updatedAt: memory.updatedAt.toISOString(),
+    }));
+  }
+
+  async deleteMemory(id: string) {
+    if (!this.db) throw new Error("Memories are unavailable until PostgreSQL is ready");
+    const memoryId = id.trim();
+    if (!memoryId) throw new Error("Memory ID is required");
+    const deleted = await this.db.memory.deleteMany({ where: { id: memoryId } });
+    if (deleted.count !== 1) throw new Error("Memory was not found");
+    return { deleted: true };
+  }
+
   async migrateDatabase() {
     if (!this.settings.postgresUrl) throw new Error("Save a PostgreSQL URL first");
     const result = await runCommand(
@@ -253,11 +370,24 @@ export class RuntimeManager {
     await this.telegram?.stop().catch(() => undefined);
     await this.db?.$disconnect().catch(() => undefined);
     this.telegram = undefined;
+    this.chat = undefined;
     this.orchestrator = undefined;
     this.db = undefined;
   }
 
   private message(error: unknown) {
     return error instanceof Error ? error.message : String(error);
+  }
+
+  private messageDto(message: {
+    id: string;
+    telegramUserId: string;
+    telegramChatId: string;
+    telegramMessageThreadId: string | null;
+    role: string;
+    content: string;
+    createdAt: Date;
+  }) {
+    return { ...message, createdAt: message.createdAt.toISOString() };
   }
 }

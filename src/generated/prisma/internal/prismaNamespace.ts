@@ -987,6 +987,7 @@ export const AgentJobScalarFieldEnum = {
   prompt: 'prompt',
   workspacePath: 'workspacePath',
   telegramChatId: 'telegramChatId',
+  telegramMessageThreadId: 'telegramMessageThreadId',
   codexThreadId: 'codexThreadId',
   result: 'result',
   error: 'error',
@@ -1028,6 +1029,7 @@ export const ChatMessageScalarFieldEnum = {
   id: 'id',
   telegramUserId: 'telegramUserId',
   telegramChatId: 'telegramChatId',
+  telegramMessageThreadId: 'telegramMessageThreadId',
   role: 'role',
   content: 'content',
   createdAt: 'createdAt'
@@ -1042,6 +1044,7 @@ export const ApprovalRequestScalarFieldEnum = {
   status: 'status',
   requesterTelegramUserId: 'requesterTelegramUserId',
   requesterTelegramChatId: 'requesterTelegramChatId',
+  requesterTelegramMessageThreadId: 'requesterTelegramMessageThreadId',
   requesterDisplayName: 'requesterDisplayName',
   payload: 'payload',
   reviewedByTelegramUserId: 'reviewedByTelegramUserId',
@@ -1069,7 +1072,9 @@ export type ConversationScalarFieldEnum = (typeof ConversationScalarFieldEnum)[k
 
 
 export const TelegramConversationSelectionScalarFieldEnum = {
+  scopeKey: 'scopeKey',
   telegramChatId: 'telegramChatId',
+  telegramMessageThreadId: 'telegramMessageThreadId',
   telegramUserId: 'telegramUserId',
   conversationId: 'conversationId',
   updatedAt: 'updatedAt'

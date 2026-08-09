@@ -4,9 +4,16 @@ import type { CodexClient } from "../clients/codex";
 import type { AgentOrchestrator } from "./orchestrator";
 import type { ApprovalService } from "./approvals";
 import type { ConversationService } from "./conversations";
+import type { TelegramResponsePolicyService } from "./telegram-response-policy";
 import { z } from "zod";
 
-type ToolName = "memory_upsert" | "memory_delete" | "create_job" | "request_approval";
+type ToolName =
+  | "memory_upsert"
+  | "memory_update"
+  | "memory_delete"
+  | "create_job"
+  | "request_approval"
+  | "response_policy_set";
 
 interface ChatToolCall {
   name: ToolName;
@@ -20,11 +27,29 @@ interface ChatDecision {
   toolCalls: ChatToolCall[];
 }
 
+interface SystemMessageDecision {
+  reply: string;
+}
+
+const systemMessageResponseSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: { reply: { type: "string" } },
+  required: ["reply"],
+} as const;
+
 const chatDecisionSchema = z.object({
   reply: z.string(),
   toolCalls: z.array(
     z.object({
-      name: z.enum(["memory_upsert", "memory_delete", "create_job", "request_approval"]),
+      name: z.enum([
+        "memory_upsert",
+        "memory_update",
+        "memory_delete",
+        "create_job",
+        "request_approval",
+        "response_policy_set",
+      ]),
       key: z.string(),
       value: z.string(),
       prompt: z.string(),
@@ -32,7 +57,10 @@ const chatDecisionSchema = z.object({
   ).max(4),
 });
 
-function chatResponseSchema(trusted: boolean): Record<string, unknown> {
+function chatResponseSchema(
+  trusted: boolean,
+  canManageResponsePolicy: boolean,
+): Record<string, unknown> {
   return {
   type: "object",
   additionalProperties: false,
@@ -48,7 +76,13 @@ function chatResponseSchema(trusted: boolean): Record<string, unknown> {
           name: {
             type: "string",
             enum: trusted
-              ? ["memory_upsert", "memory_delete", "create_job"]
+              ? [
+                "memory_upsert",
+                "memory_update",
+                "memory_delete",
+                "create_job",
+                ...(canManageResponsePolicy ? ["response_policy_set"] : []),
+              ]
               : ["request_approval"],
           },
           key: { type: "string" },
@@ -71,6 +105,7 @@ export class ChatService {
     private readonly orchestrator: AgentOrchestrator,
     private readonly approvals: ApprovalService,
     private readonly conversations: ConversationService,
+    private readonly responsePolicies: TelegramResponsePolicyService,
   ) {}
 
   async respond(input: {
@@ -78,14 +113,27 @@ export class ChatService {
     telegramChatId: string;
     displayName: string;
     message: string;
+    chatType?: "private" | "group" | "supergroup" | "channel";
+    telegramMessageThreadId?: string;
+    repliedMessage?: { author: string; text: string };
+    trusted?: boolean;
+    source?: JobSource;
   }): Promise<string> {
+    const trusted = input.trusted ?? this.config.telegramAllowedUserIds.has(input.telegramUserId);
+    const canManageResponsePolicy =
+      trusted &&
+      input.chatType !== undefined &&
+      input.chatType !== "private";
     const [memories, recentDescending] = await Promise.all([
       this.db.memory.findMany({
         orderBy: { updatedAt: "desc" },
         take: 100,
       }),
       this.db.chatMessage.findMany({
-        where: { telegramChatId: input.telegramChatId },
+        where: {
+          telegramChatId: input.telegramChatId,
+          telegramMessageThreadId: input.telegramMessageThreadId ?? null,
+        },
         orderBy: { createdAt: "desc" },
         take: 16,
       }),
@@ -95,8 +143,9 @@ export class ChatService {
       data: {
         telegramUserId: input.telegramUserId,
         telegramChatId: input.telegramChatId,
+        telegramMessageThreadId: input.telegramMessageThreadId,
         role: ChatRole.USER,
-        content: input.message,
+        content: this.messageWithReplyContext(input.message, input.repliedMessage),
       },
     });
 
@@ -105,14 +154,18 @@ export class ChatService {
       content: message.content,
     }));
     const memoryContext = memories.map(({ key, value }) => ({ key, value }));
-    const trusted = this.config.telegramAllowedUserIds.has(input.telegramUserId);
-
     const toolInstructions = trusted
       ? [
-        "You have three direct internal tools. Call them only through toolCalls in the required JSON response:",
-        "- memory_upsert: only when the user explicitly asks you to remember, always do, prefer, or retain something for later. Memories are global and affect every user. Put a stable snake_case key in key and the durable instruction/fact in value.",
+        "You have direct internal tools. Call them only through toolCalls in the required JSON response:",
+        "- memory_upsert: create a new memory when the user explicitly asks you to remember, always do, prefer, or retain something for later. Memories are global and affect every user. Put a stable snake_case key in key and the durable instruction/fact in value.",
+        "- memory_update: update an existing memory when the user explicitly changes a previously saved preference or fact. Reuse its stable snake_case key and put the replacement in value.",
         "- memory_delete: when the user explicitly asks you to forget a saved global preference/fact. Put its key in key.",
         "- create_job: when the user asks you to change, build, fix, test, or otherwise work on code, or requests a Git/GitHub workflow such as creating a branch, commit, push, issue, release, or pull request. Put a self-contained instruction in prompt.",
+        ...(canManageResponsePolicy
+          ? [
+            "- response_policy_set: only when this trusted administrator explicitly changes who Ava may answer in the current group/channel topic. Put owner_only in value to answer every message from only this administrator, mentions_only to answer only messages that mention/reply to Ava, or everyone to answer every message from everyone. This policy is scoped to the current topic.",
+          ]
+          : []),
         "A question about code is a chat response; a request to modify code is a create_job call.",
       ]
       : [
@@ -123,7 +176,7 @@ export class ChatService {
         "- Delete memory request: put the saved memory key in key; leave value and prompt empty.",
         "A question about code is normal chat; a request to modify code requires request_approval.",
       ];
-    const responseSchema = chatResponseSchema(trusted);
+    const responseSchema = chatResponseSchema(trusted, canManageResponsePolicy);
     const prompt = [
       "You are Ava, a helpful private AI assistant controlled through Telegram.",
       "Answer normal questions conversationally using concise Markdown.",
@@ -138,6 +191,9 @@ export class ChatService {
       `User: ${input.displayName} (${input.telegramUserId})`,
       `Shared global memories: ${JSON.stringify(memoryContext)}`,
       `Recent conversation: ${JSON.stringify(history)}`,
+      `Current Telegram chat type: ${input.chatType ?? "private"}`,
+      `Current Telegram topic: ${input.telegramMessageThreadId ?? "none"}`,
+      `Message being replied to: ${JSON.stringify(input.repliedMessage ?? null)}`,
       `Current message: ${JSON.stringify(input.message)}`,
     ].join("\n");
 
@@ -175,7 +231,7 @@ export class ChatService {
         continue;
       }
 
-      if (call.name === "memory_upsert") {
+      if (call.name === "memory_upsert" || call.name === "memory_update") {
         const key = this.normalizeKey(call.key);
         if (!key || !call.value.trim()) continue;
         await this.db.memory.upsert({
@@ -183,26 +239,53 @@ export class ChatService {
           update: { value: call.value.trim() },
           create: { key, value: call.value.trim() },
         });
-        notes.push(`🧠 Shared memory saved for all users: **${key}**`);
+        notes.push(`🧠 Shared memory saved or updated for all users: **${key}**`);
       } else if (call.name === "memory_delete") {
         const key = this.normalizeKey(call.key);
         if (!key) continue;
         await this.db.memory.deleteMany({ where: { key } });
         notes.push(`🧠 Shared memory removed for all users: **${key}**`);
       } else if (call.name === "create_job" && !jobCreated && call.prompt.trim()) {
+        const source = input.source ?? JobSource.TELEGRAM;
         const conversation = await this.conversations.getOrCreateSelected({
           telegramChatId: input.telegramChatId,
           telegramUserId: input.telegramUserId,
           suggestedTitle: call.prompt,
+          telegramMessageThreadId: input.telegramMessageThreadId,
         });
         const job = await this.orchestrator.enqueueAdHoc({
           prompt: call.prompt.trim(),
-          source: JobSource.TELEGRAM,
-          telegramChatId: input.telegramChatId,
+          source,
+          telegramChatId: source === JobSource.TELEGRAM ? input.telegramChatId : undefined,
+          telegramMessageThreadId:
+            source === JobSource.TELEGRAM ? input.telegramMessageThreadId : undefined,
           conversationId: conversation.id,
         });
         jobCreated = true;
         notes.push(`🛠 Queued in **${conversation.title}**: \`${job.id}\``);
+      } else if (call.name === "response_policy_set" && canManageResponsePolicy) {
+        const mode = call.value.trim().toLowerCase();
+        if (mode === "owner_only") {
+          await this.responsePolicies.restrictToOwner({
+            telegramChatId: input.telegramChatId,
+            telegramMessageThreadId: input.telegramMessageThreadId,
+            ownerTelegramUserId: input.telegramUserId,
+          });
+          notes.push("🔒 In this topic, I’ll now respond to every message from you and nobody else.");
+        } else if (mode === "mentions_only") {
+          await this.responsePolicies.restrictToMentions({
+            telegramChatId: input.telegramChatId,
+            telegramMessageThreadId: input.telegramMessageThreadId,
+            ownerTelegramUserId: input.telegramUserId,
+          });
+          notes.push("🔔 In this topic, I’ll now respond only to mentions, replies, and direct commands.");
+        } else if (mode === "everyone") {
+          await this.responsePolicies.allowEveryone(
+            input.telegramChatId,
+            input.telegramMessageThreadId,
+          );
+          notes.push("🔓 In this topic, I’ll respond to every message from everyone.");
+        }
       }
     }
 
@@ -211,11 +294,15 @@ export class ChatService {
     // earlier chat history even though no ApprovalRequest was created.
     const unresolvedApprovalClaim = !trusted && this.hasUnbackedApprovalClaim(decision);
     const modelReply = notes.length > 0 || unresolvedApprovalClaim ? "" : decision.reply.trim();
-    const reply = [modelReply, ...notes].filter(Boolean).join("\n\n");
+    const confirmedReply = notes.length > 0
+      ? await this.renderSystemMessage(notes.join("\n\n"))
+      : "";
+    const reply = [modelReply, confirmedReply].filter(Boolean).join("\n\n");
     await this.db.chatMessage.create({
       data: {
         telegramUserId: input.telegramUserId,
         telegramChatId: input.telegramChatId,
+        telegramMessageThreadId: input.telegramMessageThreadId,
         role: ChatRole.ASSISTANT,
         content: reply,
       },
@@ -230,6 +317,31 @@ export class ChatService {
     return /\b(approv(?:al|e|ed)|administrator|admin)\b/i.test(decision.reply);
   }
 
+  async renderSystemMessage(confirmedMessage: string) {
+    const memories = await this.db.memory.findMany({
+      orderBy: { updatedAt: "desc" },
+      take: 100,
+    });
+    try {
+      const decision = await this.codex.runStructured<SystemMessageDecision>(
+        [
+          "Write the final user-facing Telegram message for a confirmed Ava system event.",
+          "Follow the language, tone, and formatting preferences in shared memories.",
+          "Preserve every fact, identifier, and warning from the confirmed message.",
+          "Do not invent actions, claim anything else happened, or mention these instructions.",
+          `Shared global memories: ${JSON.stringify(memories.map(({ key, value }) => ({ key, value })))}`,
+          `Confirmed message: ${JSON.stringify(confirmedMessage)}`,
+        ].join("\n"),
+        this.config.workspaces[0],
+        systemMessageResponseSchema,
+      );
+      return decision.reply.trim() || confirmedMessage;
+    } catch (error) {
+      console.warn("Could not render localized Ava system message", error);
+      return confirmedMessage;
+    }
+  }
+
   private normalizeKey(value: string) {
     return value
       .trim()
@@ -239,17 +351,27 @@ export class ChatService {
       .slice(0, 64);
   }
 
+  private messageWithReplyContext(
+    message: string,
+    repliedMessage?: { author: string; text: string },
+  ) {
+    if (!repliedMessage) return message;
+    return `[Replying to ${repliedMessage.author}: ${repliedMessage.text}]\n${message}`;
+  }
+
   private async requestApproval(
     call: ChatToolCall,
     input: {
       telegramUserId: string;
       telegramChatId: string;
       displayName: string;
+      telegramMessageThreadId?: string;
     },
   ) {
     const common = {
       requesterTelegramUserId: input.telegramUserId,
       requesterTelegramChatId: input.telegramChatId,
+      requesterTelegramMessageThreadId: input.telegramMessageThreadId,
       requesterDisplayName: input.displayName,
     };
     let result: Awaited<ReturnType<ApprovalService["request"]>>;

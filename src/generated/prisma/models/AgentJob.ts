@@ -31,6 +31,7 @@ export type AgentJobMinAggregateOutputType = {
   prompt: string | null
   workspacePath: string | null
   telegramChatId: string | null
+  telegramMessageThreadId: string | null
   codexThreadId: string | null
   result: string | null
   error: string | null
@@ -50,6 +51,7 @@ export type AgentJobMaxAggregateOutputType = {
   prompt: string | null
   workspacePath: string | null
   telegramChatId: string | null
+  telegramMessageThreadId: string | null
   codexThreadId: string | null
   result: string | null
   error: string | null
@@ -69,6 +71,7 @@ export type AgentJobCountAggregateOutputType = {
   prompt: number
   workspacePath: number
   telegramChatId: number
+  telegramMessageThreadId: number
   codexThreadId: number
   result: number
   error: number
@@ -90,6 +93,7 @@ export type AgentJobMinAggregateInputType = {
   prompt?: true
   workspacePath?: true
   telegramChatId?: true
+  telegramMessageThreadId?: true
   codexThreadId?: true
   result?: true
   error?: true
@@ -109,6 +113,7 @@ export type AgentJobMaxAggregateInputType = {
   prompt?: true
   workspacePath?: true
   telegramChatId?: true
+  telegramMessageThreadId?: true
   codexThreadId?: true
   result?: true
   error?: true
@@ -128,6 +133,7 @@ export type AgentJobCountAggregateInputType = {
   prompt?: true
   workspacePath?: true
   telegramChatId?: true
+  telegramMessageThreadId?: true
   codexThreadId?: true
   result?: true
   error?: true
@@ -220,6 +226,7 @@ export type AgentJobGroupByOutputType = {
   prompt: string
   workspacePath: string
   telegramChatId: string | null
+  telegramMessageThreadId: string | null
   codexThreadId: string | null
   result: string | null
   error: string | null
@@ -260,6 +267,7 @@ export type AgentJobWhereInput = {
   prompt?: Prisma.StringFilter<"AgentJob"> | string
   workspacePath?: Prisma.StringFilter<"AgentJob"> | string
   telegramChatId?: Prisma.StringNullableFilter<"AgentJob"> | string | null
+  telegramMessageThreadId?: Prisma.StringNullableFilter<"AgentJob"> | string | null
   codexThreadId?: Prisma.StringNullableFilter<"AgentJob"> | string | null
   result?: Prisma.StringNullableFilter<"AgentJob"> | string | null
   error?: Prisma.StringNullableFilter<"AgentJob"> | string | null
@@ -282,6 +290,7 @@ export type AgentJobOrderByWithRelationInput = {
   prompt?: Prisma.SortOrder
   workspacePath?: Prisma.SortOrder
   telegramChatId?: Prisma.SortOrderInput | Prisma.SortOrder
+  telegramMessageThreadId?: Prisma.SortOrderInput | Prisma.SortOrder
   codexThreadId?: Prisma.SortOrderInput | Prisma.SortOrder
   result?: Prisma.SortOrderInput | Prisma.SortOrder
   error?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -308,6 +317,7 @@ export type AgentJobWhereUniqueInput = Prisma.AtLeast<{
   prompt?: Prisma.StringFilter<"AgentJob"> | string
   workspacePath?: Prisma.StringFilter<"AgentJob"> | string
   telegramChatId?: Prisma.StringNullableFilter<"AgentJob"> | string | null
+  telegramMessageThreadId?: Prisma.StringNullableFilter<"AgentJob"> | string | null
   codexThreadId?: Prisma.StringNullableFilter<"AgentJob"> | string | null
   result?: Prisma.StringNullableFilter<"AgentJob"> | string | null
   error?: Prisma.StringNullableFilter<"AgentJob"> | string | null
@@ -329,6 +339,7 @@ export type AgentJobOrderByWithAggregationInput = {
   prompt?: Prisma.SortOrder
   workspacePath?: Prisma.SortOrder
   telegramChatId?: Prisma.SortOrderInput | Prisma.SortOrder
+  telegramMessageThreadId?: Prisma.SortOrderInput | Prisma.SortOrder
   codexThreadId?: Prisma.SortOrderInput | Prisma.SortOrder
   result?: Prisma.SortOrderInput | Prisma.SortOrder
   error?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -354,6 +365,7 @@ export type AgentJobScalarWhereWithAggregatesInput = {
   prompt?: Prisma.StringWithAggregatesFilter<"AgentJob"> | string
   workspacePath?: Prisma.StringWithAggregatesFilter<"AgentJob"> | string
   telegramChatId?: Prisma.StringNullableWithAggregatesFilter<"AgentJob"> | string | null
+  telegramMessageThreadId?: Prisma.StringNullableWithAggregatesFilter<"AgentJob"> | string | null
   codexThreadId?: Prisma.StringNullableWithAggregatesFilter<"AgentJob"> | string | null
   result?: Prisma.StringNullableWithAggregatesFilter<"AgentJob"> | string | null
   error?: Prisma.StringNullableWithAggregatesFilter<"AgentJob"> | string | null
@@ -373,6 +385,7 @@ export type AgentJobCreateInput = {
   prompt: string
   workspacePath: string
   telegramChatId?: string | null
+  telegramMessageThreadId?: string | null
   codexThreadId?: string | null
   result?: string | null
   error?: string | null
@@ -393,6 +406,7 @@ export type AgentJobUncheckedCreateInput = {
   prompt: string
   workspacePath: string
   telegramChatId?: string | null
+  telegramMessageThreadId?: string | null
   codexThreadId?: string | null
   result?: string | null
   error?: string | null
@@ -413,6 +427,7 @@ export type AgentJobUpdateInput = {
   prompt?: Prisma.StringFieldUpdateOperationsInput | string
   workspacePath?: Prisma.StringFieldUpdateOperationsInput | string
   telegramChatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  telegramMessageThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   codexThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   result?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -433,6 +448,7 @@ export type AgentJobUncheckedUpdateInput = {
   prompt?: Prisma.StringFieldUpdateOperationsInput | string
   workspacePath?: Prisma.StringFieldUpdateOperationsInput | string
   telegramChatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  telegramMessageThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   codexThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   result?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -453,6 +469,7 @@ export type AgentJobCreateManyInput = {
   prompt: string
   workspacePath: string
   telegramChatId?: string | null
+  telegramMessageThreadId?: string | null
   codexThreadId?: string | null
   result?: string | null
   error?: string | null
@@ -472,6 +489,7 @@ export type AgentJobUpdateManyMutationInput = {
   prompt?: Prisma.StringFieldUpdateOperationsInput | string
   workspacePath?: Prisma.StringFieldUpdateOperationsInput | string
   telegramChatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  telegramMessageThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   codexThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   result?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -489,6 +507,7 @@ export type AgentJobUncheckedUpdateManyInput = {
   prompt?: Prisma.StringFieldUpdateOperationsInput | string
   workspacePath?: Prisma.StringFieldUpdateOperationsInput | string
   telegramChatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  telegramMessageThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   codexThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   result?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -508,6 +527,7 @@ export type AgentJobCountOrderByAggregateInput = {
   prompt?: Prisma.SortOrder
   workspacePath?: Prisma.SortOrder
   telegramChatId?: Prisma.SortOrder
+  telegramMessageThreadId?: Prisma.SortOrder
   codexThreadId?: Prisma.SortOrder
   result?: Prisma.SortOrder
   error?: Prisma.SortOrder
@@ -527,6 +547,7 @@ export type AgentJobMaxOrderByAggregateInput = {
   prompt?: Prisma.SortOrder
   workspacePath?: Prisma.SortOrder
   telegramChatId?: Prisma.SortOrder
+  telegramMessageThreadId?: Prisma.SortOrder
   codexThreadId?: Prisma.SortOrder
   result?: Prisma.SortOrder
   error?: Prisma.SortOrder
@@ -546,6 +567,7 @@ export type AgentJobMinOrderByAggregateInput = {
   prompt?: Prisma.SortOrder
   workspacePath?: Prisma.SortOrder
   telegramChatId?: Prisma.SortOrder
+  telegramMessageThreadId?: Prisma.SortOrder
   codexThreadId?: Prisma.SortOrder
   result?: Prisma.SortOrder
   error?: Prisma.SortOrder
@@ -701,6 +723,7 @@ export type AgentJobCreateWithoutEventsInput = {
   prompt: string
   workspacePath: string
   telegramChatId?: string | null
+  telegramMessageThreadId?: string | null
   codexThreadId?: string | null
   result?: string | null
   error?: string | null
@@ -720,6 +743,7 @@ export type AgentJobUncheckedCreateWithoutEventsInput = {
   prompt: string
   workspacePath: string
   telegramChatId?: string | null
+  telegramMessageThreadId?: string | null
   codexThreadId?: string | null
   result?: string | null
   error?: string | null
@@ -755,6 +779,7 @@ export type AgentJobUpdateWithoutEventsInput = {
   prompt?: Prisma.StringFieldUpdateOperationsInput | string
   workspacePath?: Prisma.StringFieldUpdateOperationsInput | string
   telegramChatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  telegramMessageThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   codexThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   result?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -774,6 +799,7 @@ export type AgentJobUncheckedUpdateWithoutEventsInput = {
   prompt?: Prisma.StringFieldUpdateOperationsInput | string
   workspacePath?: Prisma.StringFieldUpdateOperationsInput | string
   telegramChatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  telegramMessageThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   codexThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   result?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -793,6 +819,7 @@ export type AgentJobCreateWithoutApprovalRequestInput = {
   prompt: string
   workspacePath: string
   telegramChatId?: string | null
+  telegramMessageThreadId?: string | null
   codexThreadId?: string | null
   result?: string | null
   error?: string | null
@@ -812,6 +839,7 @@ export type AgentJobUncheckedCreateWithoutApprovalRequestInput = {
   prompt: string
   workspacePath: string
   telegramChatId?: string | null
+  telegramMessageThreadId?: string | null
   codexThreadId?: string | null
   result?: string | null
   error?: string | null
@@ -847,6 +875,7 @@ export type AgentJobUpdateWithoutApprovalRequestInput = {
   prompt?: Prisma.StringFieldUpdateOperationsInput | string
   workspacePath?: Prisma.StringFieldUpdateOperationsInput | string
   telegramChatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  telegramMessageThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   codexThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   result?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -866,6 +895,7 @@ export type AgentJobUncheckedUpdateWithoutApprovalRequestInput = {
   prompt?: Prisma.StringFieldUpdateOperationsInput | string
   workspacePath?: Prisma.StringFieldUpdateOperationsInput | string
   telegramChatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  telegramMessageThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   codexThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   result?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -885,6 +915,7 @@ export type AgentJobCreateWithoutConversationInput = {
   prompt: string
   workspacePath: string
   telegramChatId?: string | null
+  telegramMessageThreadId?: string | null
   codexThreadId?: string | null
   result?: string | null
   error?: string | null
@@ -904,6 +935,7 @@ export type AgentJobUncheckedCreateWithoutConversationInput = {
   prompt: string
   workspacePath: string
   telegramChatId?: string | null
+  telegramMessageThreadId?: string | null
   codexThreadId?: string | null
   result?: string | null
   error?: string | null
@@ -952,6 +984,7 @@ export type AgentJobScalarWhereInput = {
   prompt?: Prisma.StringFilter<"AgentJob"> | string
   workspacePath?: Prisma.StringFilter<"AgentJob"> | string
   telegramChatId?: Prisma.StringNullableFilter<"AgentJob"> | string | null
+  telegramMessageThreadId?: Prisma.StringNullableFilter<"AgentJob"> | string | null
   codexThreadId?: Prisma.StringNullableFilter<"AgentJob"> | string | null
   result?: Prisma.StringNullableFilter<"AgentJob"> | string | null
   error?: Prisma.StringNullableFilter<"AgentJob"> | string | null
@@ -971,6 +1004,7 @@ export type AgentJobCreateManyConversationInput = {
   prompt: string
   workspacePath: string
   telegramChatId?: string | null
+  telegramMessageThreadId?: string | null
   codexThreadId?: string | null
   result?: string | null
   error?: string | null
@@ -989,6 +1023,7 @@ export type AgentJobUpdateWithoutConversationInput = {
   prompt?: Prisma.StringFieldUpdateOperationsInput | string
   workspacePath?: Prisma.StringFieldUpdateOperationsInput | string
   telegramChatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  telegramMessageThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   codexThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   result?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1008,6 +1043,7 @@ export type AgentJobUncheckedUpdateWithoutConversationInput = {
   prompt?: Prisma.StringFieldUpdateOperationsInput | string
   workspacePath?: Prisma.StringFieldUpdateOperationsInput | string
   telegramChatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  telegramMessageThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   codexThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   result?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1027,6 +1063,7 @@ export type AgentJobUncheckedUpdateManyWithoutConversationInput = {
   prompt?: Prisma.StringFieldUpdateOperationsInput | string
   workspacePath?: Prisma.StringFieldUpdateOperationsInput | string
   telegramChatId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  telegramMessageThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   codexThreadId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   result?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1076,6 +1113,7 @@ export type AgentJobSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   prompt?: boolean
   workspacePath?: boolean
   telegramChatId?: boolean
+  telegramMessageThreadId?: boolean
   codexThreadId?: boolean
   result?: boolean
   error?: boolean
@@ -1099,6 +1137,7 @@ export type AgentJobSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   prompt?: boolean
   workspacePath?: boolean
   telegramChatId?: boolean
+  telegramMessageThreadId?: boolean
   codexThreadId?: boolean
   result?: boolean
   error?: boolean
@@ -1120,6 +1159,7 @@ export type AgentJobSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   prompt?: boolean
   workspacePath?: boolean
   telegramChatId?: boolean
+  telegramMessageThreadId?: boolean
   codexThreadId?: boolean
   result?: boolean
   error?: boolean
@@ -1141,6 +1181,7 @@ export type AgentJobSelectScalar = {
   prompt?: boolean
   workspacePath?: boolean
   telegramChatId?: boolean
+  telegramMessageThreadId?: boolean
   codexThreadId?: boolean
   result?: boolean
   error?: boolean
@@ -1153,7 +1194,7 @@ export type AgentJobSelectScalar = {
   resultDeliveryStatus?: boolean
 }
 
-export type AgentJobOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "status" | "source" | "prompt" | "workspacePath" | "telegramChatId" | "codexThreadId" | "result" | "error" | "startedAt" | "finishedAt" | "createdAt" | "updatedAt" | "conversationId" | "approvalRequestId" | "resultDeliveryStatus", ExtArgs["result"]["agentJob"]>
+export type AgentJobOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "status" | "source" | "prompt" | "workspacePath" | "telegramChatId" | "telegramMessageThreadId" | "codexThreadId" | "result" | "error" | "startedAt" | "finishedAt" | "createdAt" | "updatedAt" | "conversationId" | "approvalRequestId" | "resultDeliveryStatus", ExtArgs["result"]["agentJob"]>
 export type AgentJobInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   events?: boolean | Prisma.AgentJob$eventsArgs<ExtArgs>
   conversation?: boolean | Prisma.AgentJob$conversationArgs<ExtArgs>
@@ -1183,6 +1224,7 @@ export type $AgentJobPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     prompt: string
     workspacePath: string
     telegramChatId: string | null
+    telegramMessageThreadId: string | null
     codexThreadId: string | null
     result: string | null
     error: string | null
@@ -1625,6 +1667,7 @@ export interface AgentJobFieldRefs {
   readonly prompt: Prisma.FieldRef<"AgentJob", 'String'>
   readonly workspacePath: Prisma.FieldRef<"AgentJob", 'String'>
   readonly telegramChatId: Prisma.FieldRef<"AgentJob", 'String'>
+  readonly telegramMessageThreadId: Prisma.FieldRef<"AgentJob", 'String'>
   readonly codexThreadId: Prisma.FieldRef<"AgentJob", 'String'>
   readonly result: Prisma.FieldRef<"AgentJob", 'String'>
   readonly error: Prisma.FieldRef<"AgentJob", 'String'>

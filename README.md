@@ -37,6 +37,16 @@ On the first Electron launch:
    descendant project is available to coding jobs.
 7. Save. The connection status cards should become green.
 
+The desktop interface has four tabs:
+
+- **Settings** contains connection status and all runtime configuration.
+- **Chat** is a persistent conversation with Ava. It always runs as a trusted administrator, so
+  memory and coding actions do not require Telegram approval.
+- **Activity** lists all persisted user and assistant messages newest-first with server-side
+  pagination and 10, 30, 50, or 100 rows per page (50 by default).
+- **Memories** lists global memory records and lets the desktop administrator delete individual
+  memories, including operational Telegram response rules.
+
 Secrets are encrypted using Electron `safeStorage` (macOS Keychain) and written to Ava's Electron
 `userData/settings.json`. Secrets are not returned to the renderer after saving. A blank secret field
 means “keep the existing value.”
@@ -46,6 +56,35 @@ means “keep the existing value.”
 Numeric IDs in **Trusted administrator Telegram IDs** can chat and execute memory, coding, and
 GitHub actions directly. Everyone else gets chat-only access: their normal messages are answered,
 but memory or coding/GitHub actions become pending approval requests instead of executing.
+
+### Groups, channels, and forum topics
+
+Ava supports private groups, supergroups, channel posts, linked channel discussion groups, and
+forum topics. By default, every message reaches Ava and receives a response. Replies stay in the
+same forum topic. Chat history, coding-conversation selection, job progress, and approval delivery
+also remain in that topic.
+
+When a trusted administrator mentions Ava while replying to somebody else's message, requests such
+as “answer this” include the replied-to author and text in Ava's context. A channel post does not
+reveal the human administrator's Telegram user ID, so identity-sensitive administrator actions
+should be sent from the linked discussion group or a normal group topic.
+
+A trusted administrator can change the response rule naturally in any group or topic:
+
+```text
+@ava_bot only respond to my messages in this topic
+@ava_bot only respond to mentions and replies in this topic
+@ava_bot respond to everyone again
+```
+
+The restriction is stored in the existing global `Memory` model. Its value contains the chat ID,
+topic ID, response mode (`owner_only` or `mentions_only`), and administrator ID. Restoring everyone
+deletes that operational memory; no separate response-policy table is used. Each topic has its own
+memory entry, so one topic's rule does not affect another topic.
+
+Add Ava to a group normally. To process every group message, disable privacy mode for the bot with
+BotFather (`/setprivacy` → select the bot → **Disable**) or make the bot a group administrator.
+To process broadcast channel posts, add her as a channel administrator with permission to post.
 
 Each pending request is stored in PostgreSQL and sent to every trusted administrator with
 **Approve** and **Deny** buttons. The requester is told that Ava alerted the administrator and is
@@ -67,6 +106,10 @@ Natural-language actions are routed through a constrained tool-call contract:
 - For trusted administrators, “Always answer me in Persian” calls `memory_upsert`, “Forget my
   language preference” calls `memory_delete`, and “Fix the login bug and add tests” calls
   `create_job`.
+- Changing a saved preference calls `memory_update`, which replaces the existing value under the
+  same key. Asking Ava to forget it calls `memory_delete`.
+- Ava asks the chat model to render confirmed system events, so approval, lock/unlock, memory, and
+  queue confirmations follow saved language and style preferences too.
 - Chat-only users receive only `request_approval`; direct memory and coding tools are absent from
   their model schema.
 

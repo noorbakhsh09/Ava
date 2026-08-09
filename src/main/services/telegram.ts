@@ -1,4 +1,4 @@
-import { Bot, InlineKeyboard } from "grammy";
+import { Bot, InlineKeyboard, type Context } from "grammy";
 import {
   ApprovalAction,
   JobSource,
@@ -16,6 +16,72 @@ import { describeApprovalRequest, type ApprovalService } from "./approvals";
 import type { ConversationService } from "./conversations";
 import type { JobProgressUpdate } from "./orchestrator";
 import { buildProgressMessage, formatCodexProgress } from "./telegram-progress";
+import type { TelegramResponsePolicyService } from "./telegram-response-policy";
+
+export function isTelegramMessageAddressed(input: {
+  chatType: "private" | "group" | "supergroup" | "channel";
+  text: string;
+  botUsername: string;
+  repliesToBot: boolean;
+  mentionsBot?: boolean;
+}) {
+  if (input.chatType === "private") return true;
+  if (input.repliesToBot) return true;
+  if (input.mentionsBot) return true;
+
+  const command = input.text.trim().match(/^\/[^\s@]+(?:@([A-Za-z0-9_]+))?(?:\s|$)/);
+  if (command) return !command[1] || command[1].toLowerCase() === input.botUsername.toLowerCase();
+
+  const escapedUsername = input.botUsername.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[^A-Za-z0-9_])@${escapedUsername}(?=$|[^A-Za-z0-9_])`, "i")
+    .test(input.text);
+}
+
+export function telegramEntitiesMentionBot(
+  text: string,
+  entities: readonly {
+    type: string;
+    offset: number;
+    length: number;
+    user?: { id: number };
+  }[] | undefined,
+  botUsername: string,
+  botId: number,
+) {
+  return entities?.some((entity) => {
+    if (entity.type === "text_mention") return entity.user?.id === botId;
+    if (entity.type !== "mention") return false;
+    const username = text
+      .slice(entity.offset, entity.offset + entity.length)
+      .replace(/^@/, "");
+    return username.toLowerCase() === botUsername.toLowerCase();
+  }) ?? false;
+}
+
+export function telegramMessageContent(message: {
+  text?: string;
+  caption?: string;
+  entities?: readonly {
+    type: string;
+    offset: number;
+    length: number;
+    user?: { id: number };
+  }[];
+  caption_entities?: readonly {
+    type: string;
+    offset: number;
+    length: number;
+    user?: { id: number };
+  }[];
+}) {
+  if (typeof message.text === "string") {
+    return { text: message.text, entities: message.entities };
+  }
+  if (typeof message.caption === "string") {
+    return { text: message.caption, entities: message.caption_entities };
+  }
+  return undefined;
+}
 
 const ADMIN_COMMANDS = [
   { command: "start", description: "Show your Ava access level" },
@@ -47,6 +113,7 @@ export class TelegramService {
     private readonly chat: ChatService,
     private readonly approvals: ApprovalService,
     private readonly conversations: ConversationService,
+    private readonly responsePolicies: TelegramResponsePolicyService,
   ) {}
 
   get enabled() {
@@ -86,20 +153,48 @@ export class TelegramService {
       await next();
     });
 
-    bot.command("start", (ctx) => {
+    bot.use(async (ctx, next) => {
+      const message = ctx.msg;
+      const content = message ? telegramMessageContent(message) : undefined;
+      if (!message || !content || !ctx.chat || ctx.chat.type === "private") return next();
+      const addressed = isTelegramMessageAddressed({
+        chatType: ctx.chat.type,
+        text: content.text,
+        botUsername: identity.username,
+        repliesToBot: message.reply_to_message?.from?.id === identity.id,
+        mentionsBot: telegramEntitiesMentionBot(
+          content.text,
+          content.entities,
+          identity.username,
+          identity.id,
+        ),
+      });
+
+      const telegramMessageThreadId = message.message_thread_id?.toString();
+      const telegramUserId = ctx.from?.id.toString();
+      if (!await this.responsePolicies.allows(
+        ctx.chat.id.toString(),
+        telegramMessageThreadId,
+        telegramUserId,
+        addressed,
+      )) return;
+      await next();
+    });
+
+    bot.command("start", async (ctx) => {
       const trusted = this.isTrusted(ctx.from?.id);
-      return ctx.reply(
+      return ctx.reply(await this.chat.renderSystemMessage(
         trusted
           ? "Ava is online. You are a trusted administrator. Chat normally, manage memories, or use /conversation to select a persistent coding project."
           : "Ava is online. You have chat-only access. You can talk to Ava normally; memory and coding/GitHub actions require administrator approval.",
-      );
+      ));
     });
-    bot.command("status", (ctx) =>
-      ctx.reply(
+    bot.command("status", async (ctx) =>
+      ctx.reply(await this.chat.renderSystemMessage(
         this.isTrusted(ctx.from?.id)
           ? "Ava is online. You are a trusted administrator."
           : "Ava is online. Your access is chat-only; actions require administrator approval.",
-      ),
+      )),
     );
     bot.command("conversation", async (ctx) => {
       if (!ctx.from) return ctx.reply("I could not identify your Telegram account.");
@@ -113,18 +208,27 @@ export class TelegramService {
           telegramChatId: ctx.chat.id.toString(),
           telegramUserId: ctx.from.id.toString(),
           title,
+          telegramMessageThreadId: ctx.msg?.message_thread_id?.toString(),
         });
-        return ctx.reply(`Created and selected conversation: ${conversation.title}`);
+        return ctx.reply(await this.chat.renderSystemMessage(
+          `Created and selected conversation: ${conversation.title}`,
+        ));
       }
       if (input) {
         const conversation = await this.conversations.select(
           ctx.chat.id.toString(),
           ctx.from.id.toString(),
           input,
+          ctx.msg?.message_thread_id?.toString(),
         );
-        return ctx.reply(`Selected conversation: ${conversation.title}`);
+        return ctx.reply(await this.chat.renderSystemMessage(
+          `Selected conversation: ${conversation.title}`,
+        ));
       }
-      return this.sendConversationPicker(ctx.chat.id.toString());
+      return this.sendConversationPicker(
+        ctx.chat.id.toString(),
+        ctx.msg?.message_thread_id?.toString(),
+      );
     });
     bot.command("ask", async (ctx) => {
       const prompt = String(ctx.match ?? "").trim();
@@ -134,24 +238,31 @@ export class TelegramService {
         const result = await this.approvals.request({
           requesterTelegramUserId: ctx.from.id.toString(),
           requesterTelegramChatId: ctx.chat.id.toString(),
+          requesterTelegramMessageThreadId: ctx.msg?.message_thread_id?.toString(),
           requesterDisplayName: this.displayName(ctx.from),
           action: ApprovalAction.CREATE_JOB,
           payload: { prompt },
         });
-        return ctx.reply(this.pendingApprovalMessage(result.request.id, result.notified));
+        return ctx.reply(await this.chat.renderSystemMessage(
+          this.pendingApprovalMessage(result.request.id, result.notified),
+        ));
       }
       const conversation = await this.conversations.getOrCreateSelected({
         telegramChatId: ctx.chat.id.toString(),
         telegramUserId: ctx.from.id.toString(),
         suggestedTitle: prompt,
+        telegramMessageThreadId: ctx.msg?.message_thread_id?.toString(),
       });
       const job = await this.orchestrator.enqueueAdHoc({
         prompt,
         source: JobSource.TELEGRAM,
         telegramChatId: ctx.chat.id.toString(),
+        telegramMessageThreadId: ctx.msg?.message_thread_id?.toString(),
         conversationId: conversation.id,
       });
-      await ctx.reply(`Queued job ${job.id} in ${conversation.title}.`);
+      await ctx.reply(await this.chat.renderSystemMessage(
+        `Queued job ${job.id} in ${conversation.title}.`,
+      ));
     });
     bot.callbackQuery(/^ava:conversation:(.+)$/, async (ctx) => {
       if (!this.isTrusted(ctx.from.id)) {
@@ -163,10 +274,13 @@ export class TelegramService {
           ctx.chat?.id.toString() ?? ctx.from.id.toString(),
           ctx.from.id.toString(),
           ctx.match[1],
+          ctx.msg?.message_thread_id?.toString(),
         );
         await ctx.answerCallbackQuery({ text: `Selected ${conversation.title}`.slice(0, 180) });
         await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } });
-        await ctx.reply(`Selected conversation: ${conversation.title}`);
+        await ctx.reply(await this.chat.renderSystemMessage(
+          `Selected conversation: ${conversation.title}`,
+        ));
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         await ctx.answerCallbackQuery({ text: message.slice(0, 180), show_alert: true });
@@ -196,17 +310,22 @@ export class TelegramService {
         await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } });
         const isApprovedJob =
           decision === "approve" && result.request.action === ApprovalAction.CREATE_JOB;
-        await ctx.reply(
+        await ctx.reply(await this.chat.renderSystemMessage(
           [
             `${decision === "approve" ? "✅ Approved" : "❌ Denied"} request ${requestId}.`,
             decision === "approve" ? result.message : "",
           ].filter(Boolean).join("\n\n"),
-        );
-        await this.sendMarkdown(
-          result.request.requesterTelegramChatId,
+        ));
+        const requesterMessage = await this.chat.renderSystemMessage(
           isApprovedJob
             ? "The administrator approved your coding task. The result will be sent to the administrator, who can choose whether to share it with you."
             : result.message,
+        );
+        await this.sendMarkdown(
+          result.request.requesterTelegramChatId,
+          requesterMessage,
+          undefined,
+          result.request.requesterTelegramMessageThreadId ?? undefined,
         );
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -265,6 +384,8 @@ export class TelegramService {
         await this.sendMarkdown(
           request.requesterTelegramChatId,
           `**Result for your approved task**\n\n${job.result ?? "The task completed without a result message."}`,
+          undefined,
+          request.requesterTelegramMessageThreadId ?? undefined,
         );
       } catch (error) {
         await this.db.agentJob.updateMany({
@@ -282,34 +403,67 @@ export class TelegramService {
         data: { resultDeliveryStatus: ResultDeliveryStatus.SENT },
       });
       await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } }).catch(() => undefined);
-      await ctx.reply(`Result sent to ${request.requesterDisplayName}.`);
+      await ctx.reply(await this.chat.renderSystemMessage(
+        `Result sent to ${request.requesterDisplayName}.`,
+      ));
     });
-    bot.on("message:text", async (ctx) => {
-      if (ctx.message.text.startsWith("/")) {
+    const handleText = async (ctx: Context) => {
+      const message = ctx.msg;
+      const content = message ? telegramMessageContent(message) : undefined;
+      if (!message || !content || !ctx.chat) return;
+      const text = content.text;
+      if (text.startsWith("/")) {
         await ctx.reply("Unknown command. You can also just message me normally.");
         return;
       }
 
-      await ctx.replyWithChatAction("typing");
+      await ctx.replyWithChatAction("typing").catch(() => undefined);
       const typingTimer = setInterval(() => {
         void ctx.replyWithChatAction("typing").catch(() => undefined);
       }, 4_000);
 
       try {
+        const telegramUserId = ctx.from?.id.toString()
+          ?? `sender_chat:${ctx.senderChat?.id ?? ctx.chat.id}`;
+        const displayName = ctx.from
+          ? this.displayName(ctx.from)
+          : ctx.senderChat?.title ?? "Channel";
+        const replied = message.reply_to_message;
+        const repliedText = replied && "text" in replied
+          ? replied.text
+          : replied && "caption" in replied
+            ? replied.caption
+            : undefined;
+        const repliedMessage = replied && repliedText
+          ? {
+            author: replied.from
+              ? this.displayName(replied.from)
+              : replied.sender_chat?.title ?? "Telegram user",
+            text: repliedText,
+          }
+          : undefined;
+        const telegramMessageThreadId = message.message_thread_id?.toString();
         const reply = await this.chat.respond({
-          telegramUserId: ctx.from.id.toString(),
+          telegramUserId,
           telegramChatId: ctx.chat.id.toString(),
-          displayName: this.displayName(ctx.from),
-          message: ctx.message.text,
+          displayName,
+          message: text,
+          chatType: ctx.chat.type,
+          telegramMessageThreadId,
+          repliedMessage,
         });
-        await this.sendMarkdown(ctx.chat.id, reply);
+        await this.sendMarkdown(ctx.chat.id, reply, undefined, telegramMessageThreadId);
       } catch (error) {
         console.error("Telegram chat response failed", error);
         await ctx.reply(`I couldn't process that message: ${error instanceof Error ? error.message : String(error)}`);
       } finally {
         clearInterval(typingTimer);
       }
-    });
+    };
+    bot.on("message", handleText);
+    bot.on("channel_post", handleText);
+    bot.on("edited_message", handleText);
+    bot.on("edited_channel_post", handleText);
 
     bot.catch(({ error }) => console.error("Telegram update failed", error));
     this.unsubscribeJobs = this.orchestrator.onFinished((job) => this.notifyFinished(job));
@@ -350,6 +504,7 @@ export class TelegramService {
       job.telegramChatId,
       `**Job ${job.id}: ${job.status}**\n\n${body ?? "No details."}`,
       deliveryKeyboard,
+      job.telegramMessageThreadId ?? undefined,
     );
   }
 
@@ -361,7 +516,12 @@ export class TelegramService {
       const message = await this.bot.api.sendMessage(
         update.job.telegramChatId,
         markdownToTelegramHtml(source),
-        { parse_mode: "HTML" },
+        {
+          parse_mode: "HTML",
+          ...(update.job.telegramMessageThreadId
+            ? { message_thread_id: Number(update.job.telegramMessageThreadId) }
+            : {}),
+        },
       );
       state = {
         chatId: update.job.telegramChatId,
@@ -411,13 +571,20 @@ export class TelegramService {
     this.progressMessages.delete(jobId);
   }
 
-  private async sendConversationPicker(telegramChatId: string) {
+  private async sendConversationPicker(
+    telegramChatId: string,
+    telegramMessageThreadId?: string,
+  ) {
     if (!this.bot) return;
-    const { selectedId, conversations } = await this.conversations.list(telegramChatId);
+    const { selectedId, conversations } = await this.conversations.list(
+      telegramChatId,
+      telegramMessageThreadId,
+    );
     if (conversations.length === 0) {
       await this.bot.api.sendMessage(
         telegramChatId,
         "No coding conversations yet. Create one with /conversation new Project name",
+        telegramMessageThreadId ? { message_thread_id: Number(telegramMessageThreadId) } : undefined,
       );
       return;
     }
@@ -429,7 +596,12 @@ export class TelegramService {
     await this.bot.api.sendMessage(
       telegramChatId,
       "Select the coding conversation for future tasks. Create another with /conversation new Project name",
-      { reply_markup: keyboard },
+      {
+        reply_markup: keyboard,
+        ...(telegramMessageThreadId
+          ? { message_thread_id: Number(telegramMessageThreadId) }
+          : {}),
+      },
     );
   }
 
@@ -439,13 +611,13 @@ export class TelegramService {
       .text("✅ Approve", `ava:approve:${request.id}`)
       .text("❌ Deny", `ava:deny:${request.id}`);
     const detail = describeApprovalRequest(request).slice(0, 2_800);
-    const message = [
+    const message = await this.chat.renderSystemMessage([
       "🔐 **Approval required**",
       `From: **${request.requesterDisplayName}** (\`${request.requesterTelegramUserId}\`)`,
       `Request: \`${request.id}\``,
       "",
       detail,
-    ].join("\n");
+    ].join("\n"));
     const notifications = await Promise.allSettled(
       [...this.config.telegramAllowedUserIds].map((userId) =>
         this.bot!.api.sendMessage(userId, markdownToTelegramHtml(message), {
@@ -477,6 +649,7 @@ export class TelegramService {
     chatId: string | number,
     markdown: string,
     finalReplyMarkup?: InlineKeyboard,
+    telegramMessageThreadId?: string,
   ) {
     if (!this.bot) return;
     const chunks = chunkMarkdown(markdown);
@@ -485,6 +658,9 @@ export class TelegramService {
       try {
         await this.bot.api.sendMessage(chatId, markdownToTelegramHtml(source), {
           parse_mode: "HTML",
+          ...(telegramMessageThreadId
+            ? { message_thread_id: Number(telegramMessageThreadId) }
+            : {}),
           ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
         });
       } catch (error) {
@@ -492,7 +668,12 @@ export class TelegramService {
         await this.bot.api.sendMessage(
           chatId,
           source,
-          replyMarkup ? { reply_markup: replyMarkup } : undefined,
+          {
+            ...(telegramMessageThreadId
+              ? { message_thread_id: Number(telegramMessageThreadId) }
+              : {}),
+            ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
+          },
         );
       }
     }
